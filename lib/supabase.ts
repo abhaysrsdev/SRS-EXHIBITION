@@ -1,14 +1,10 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { ExhibitionLead, UploadedFile } from '@/types';
 
-// Hardcoded fallbacks ensure mobile browsers never get undefined values.
-// NEXT_PUBLIC_ vars are injected at build/compile time by Next.js.
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  'https://hvatcjasdnbbzwkmwhgb.supabase.co';
-
+// NOTE: The anon key is a PUBLIC key — safe to expose in client bundles.
+// Using direct values avoids Next.js build-time env replacement issues on Vercel.
+const SUPABASE_URL = 'https://hvatcjasdnbbzwkmwhgb.supabase.co';
 const SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2YXRjamFzZG5iYnp3a213aGdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzODAwNDYsImV4cCI6MjA5Nzk1NjA0Nn0.xEAIafIw4eVjFmWBZERsGjNZzl2u8wJ9QQdcICcP-R8';
 
 let _client: SupabaseClient | null = null;
@@ -18,8 +14,6 @@ function getClient(): SupabaseClient {
   _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   return _client;
 }
-
-export const supabase = getClient;
 
 // ─── Upload File ─────────────────────────────────────────────────────────────
 
