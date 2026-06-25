@@ -1,29 +1,27 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { ExhibitionLead, UploadedFile } from '@/types';
 
+// Hardcoded fallbacks ensure mobile browsers never get undefined values.
+// NEXT_PUBLIC_ vars are injected at build/compile time by Next.js.
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  'https://hvatcjasdnbbzwkmwhgb.supabase.co';
+
+const SUPABASE_ANON_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2YXRjamFzZG5iYnp3a213aGdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzODAwNDYsImV4cCI6MjA5Nzk1NjA0Nn0.xEAIafIw4eVjFmWBZERsGjNZzl2u8wJ9QQdcICcP-R8';
+
 let _client: SupabaseClient | null = null;
 
 function getClient(): SupabaseClient {
   if (_client) return _client;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) {
-    throw new Error(
-      'Supabase env vars not set. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local'
-    );
-  }
-  _client = createClient(url, key);
+  _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   return _client;
 }
 
-// Named export kept for convenience — throws at call time if not configured
-export const supabase = new Proxy({} as SupabaseClient, {
-  get(_t, prop) {
-    return getClient()[prop as keyof SupabaseClient];
-  },
-});
+export const supabase = getClient;
 
-// ─── Upload Files ────────────────────────────────────────────────────────────
+// ─── Upload File ─────────────────────────────────────────────────────────────
 
 export async function uploadFile(
   file: File,
