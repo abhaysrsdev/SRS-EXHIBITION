@@ -1,258 +1,381 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Loader2, Send, Upload, X, CreditCard } from 'lucide-react';
+import { Loader2, Upload, MapPin, ScanLine, Sparkles, X } from 'lucide-react';
 import { z } from 'zod';
 import { uploadFile, insertLead } from '@/lib/supabase';
-import { downloadCatalogue, generateLeadId, validateImageFile, formatFileSize } from '@/lib/utils';
+import { generateLeadId, validateImageFile } from '@/lib/utils';
 import type { UploadedFile } from '@/types';
 
-// ─── Simplified schema (customer-facing) ─────────────────────────────────────
+// ─── Indian Cities ────────────────────────────────────────────────────────────
 
-const simpleSchema = z.object({
-  name: z.string().min(2, 'Full name must be at least 2 characters').max(100),
-  mobile: z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
-  city: z.string().min(2, 'City is required').max(100),
-  shop_name: z.string().min(2, 'Shop / Boutique name is required').max(200),
+const INDIAN_CITIES = [
+  'Agra','Ahmedabad','Ajmer','Aligarh','Allahabad','Amritsar','Aurangabad',
+  'Bareilly','Bengaluru','Bhopal','Bhubaneswar','Chandigarh','Chennai',
+  'Coimbatore','Cuttack','Dehradun','Delhi','Durgapur','Faridabad',
+  'Ghaziabad','Gurgaon','Guwahati','Gwalior','Hyderabad','Indore',
+  'Jabalpur','Jaipur','Jalandhar','Jammu','Jodhpur','Kanpur','Kochi',
+  'Kolkata','Kota','Kozhikode','Lucknow','Ludhiana','Madurai','Mangaluru',
+  'Meerut','Mumbai','Mysuru','Nagpur','Nashik','Navi Mumbai','Noida',
+  'Patna','Pune','Raipur','Rajkot','Ranchi','Salem','Siliguri',
+  'Srinagar','Surat','Thane','Thiruvananthapuram','Tiruchirappalli',
+  'Udaipur','Vadodara','Varanasi','Vijayawada','Visakhapatnam',
+];
+
+// ─── Zod Schema ───────────────────────────────────────────────────────────────
+
+const schema = z.object({
+  name:      z.string().min(2, 'Name must be at least 2 characters').max(100),
+  mobile:    z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
+  shop_name: z.string().min(2, 'Business / Boutique name is required').max(200),
+  city:      z.string().min(2, 'City is required').max(100),
 });
 
-type SimpleFormData = z.infer<typeof simpleSchema>;
+type FormData = z.infer<typeof schema>;
 
-interface CardFile {
-  file: File;
-  preview: string | null;
-  id: string;
+// ─── City Dropdown ────────────────────────────────────────────────────────────
+
+function CityDropdown({
+  value,
+  onChange,
+  error,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+}) {
+  const [query, setQuery] = useState(value || '');
+  const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(-1);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filtered = query.length < 1
+    ? INDIAN_CITIES.slice(0, 40)
+    : INDIAN_CITIES.filter((c) => c.toLowerCase().includes(query.toLowerCase())).slice(0, 20);
+
+  const showCustom =
+    query.length >= 2 && !INDIAN_CITIES.some((c) => c.toLowerCase() === query.toLowerCase());
+
+  const select = (city: string) => {
+    setQuery(city);
+    onChange(city);
+    setOpen(false);
+    setFocused(-1);
+  };
+
+  useEffect(() => {
+    if (value && value !== query) { setQuery(value); }
+  }, [value]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const allOptions = [
+    ...filtered,
+    ...(showCustom ? [`Use "${query}"`] : []),
+  ];
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (!open) { if (e.key === 'ArrowDown') setOpen(true); return; }
+    if (e.key === 'ArrowDown') setFocused((p) => Math.min(p + 1, allOptions.length - 1));
+    else if (e.key === 'ArrowUp') setFocused((p) => Math.max(p - 1, 0));
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (focused >= 0 && allOptions[focused]) {
+        const opt = allOptions[focused];
+        select(opt.startsWith('Use "') ? query : opt);
+      }
+    } else if (e.key === 'Escape') setOpen(false);
+  };
+
+  return (
+    <div className="city-wrap" ref={wrapRef}>
+      <div style={{ position: 'relative' }}>
+        <input
+          ref={inputRef}
+          id="city"
+          type="text"
+          autoComplete="off"
+          placeholder="Select City"
+          value={query}
+          className={`form-input ${error ? 'error' : ''}`}
+          style={{ paddingRight: 40 }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            onChange(e.target.value);
+            setOpen(true);
+            setFocused(-1);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKey}
+        />
+        <MapPin
+          size={16}
+          style={{
+            position: 'absolute', right: 14, top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--gold)', pointerEvents: 'none',
+          }}
+        />
+      </div>
+      {open && (
+        <div className="city-dropdown">
+          {allOptions.length === 0 && (
+            <div className="city-option" style={{ cursor: 'default', color: 'var(--text-muted)' }}>
+              No cities found
+            </div>
+          )}
+          {filtered.map((city, i) => (
+            <div
+              key={city}
+              className={`city-option ${i === focused ? 'focused' : ''}`}
+              onMouseDown={() => select(city)}
+              onMouseEnter={() => setFocused(i)}
+            >
+              {city}
+            </div>
+          ))}
+          {showCustom && (
+            <div
+              className={`city-option custom ${allOptions.length - 1 === focused ? 'focused' : ''}`}
+              onMouseDown={() => select(query)}
+              onMouseEnter={() => setFocused(allOptions.length - 1)}
+            >
+              Use: &ldquo;{query}&rdquo;
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
+
+// ─── Main Form ────────────────────────────────────────────────────────────────
 
 export default function LeadForm() {
   const router = useRouter();
-  const [cards, setCards] = useState<CardFile[]>([]);
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [ocrStatus, setOcrStatus] = useState<'idle' | 'scanning' | 'done' | 'failed'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
     handleSubmit,
+    setValue,
+    control,
     formState: { errors },
-  } = useForm<SimpleFormData>({ resolver: zodResolver(simpleSchema) });
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-  // ── File handling ───────────────────────────────────────────────────────
-
-  const addFiles = useCallback((fileList: FileList | null) => {
-    if (!fileList) return;
-    const added: CardFile[] = [];
-    Array.from(fileList).forEach((file) => {
-      const err = validateImageFile(file);
-      if (err) { toast.error(err); return; }
-      added.push({
-        file,
-        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
-        id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+  // ── OCR ───────────────────────────────────────────────────────────────────
+  const runOCR = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    setOcrStatus('scanning');
+    try {
+      await new Promise<void>((resolve, reject) => {
+        if ((window as any).Tesseract) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed'));
+        document.head.appendChild(script);
       });
-    });
-    setCards((prev) => [...prev, ...added]);
-  }, []);
 
-  const removeCard = (id: string) => {
-    setCards((prev) => {
-      const f = prev.find((c) => c.id === id);
-      if (f?.preview) URL.revokeObjectURL(f.preview);
-      return prev.filter((c) => c.id !== id);
-    });
+      const Tesseract = (window as any).Tesseract;
+      const { data: { text } } = await Tesseract.recognize(file, 'eng', { logger: () => {} });
+
+      // Mobile
+      const phoneMatch = text.match(/[6-9]\d{9}/);
+      if (phoneMatch) setValue('mobile', phoneMatch[0], { shouldValidate: true });
+
+      // City
+      const lower = text.toLowerCase();
+      const foundCity = INDIAN_CITIES.find((c) => lower.includes(c.toLowerCase()));
+      if (foundCity) setValue('city', foundCity, { shouldValidate: true });
+
+      // Name & Business
+      const lines = text.split('\n').map((l: string) => l.trim()).filter(Boolean);
+      const nameLine = lines.find((l: string) => /^[A-Z][a-z]+ [A-Z][a-z]+/.test(l)) || lines[0];
+      if (nameLine && nameLine.length < 60) setValue('name', nameLine, { shouldValidate: true });
+
+      const bizKw = /pvt|ltd|enterprises|traders|fashions|boutique|collections|studio|store|shop|co\.|&/i;
+      const bizLine = lines.find((l: string) => bizKw.test(l) && l !== nameLine);
+      if (bizLine && bizLine.length < 150) setValue('shop_name', bizLine, { shouldValidate: true });
+
+      setOcrStatus('done');
+      toast.success('Card scanned successfully!');
+    } catch {
+      setOcrStatus('failed');
+      toast.error('Could not read card automatically');
+    }
+  }, [setValue]);
+
+  const handleFile = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const err = validateImageFile(file);
+    if (err) { toast.error(err); return; }
+    
+    setFileToUpload(file);
+    runOCR(file);
   };
 
-  // ── Submit ──────────────────────────────────────────────────────────────
-
-  const onSubmit = async (data: SimpleFormData) => {
+  // ── Submit ────────────────────────────────────────────────────────────────
+  const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
-    const toastId = toast.loading('Saving your registration…');
-
+    const toastId = toast.loading('Registering details…');
     try {
-      const leadId = generateLeadId();
       let uploadedFiles: UploadedFile[] = [];
-
-      if (cards.length > 0) {
-        toast.loading(`Uploading ${cards.length} file(s)…`, { id: toastId });
-        uploadedFiles = await Promise.all(
-          cards.map((c) => uploadFile(c.file, 'visiting_card', leadId))
-        );
+      if (fileToUpload) {
+        const leadId = generateLeadId();
+        const uf = await uploadFile(fileToUpload, 'visiting_card', leadId);
+        uploadedFiles.push(uf);
       }
 
-      toast.loading('Saving your details…', { id: toastId });
       await insertLead({
-        name: data.name,
-        mobile: data.mobile,
-        city: data.city,
-        state: null,
-        shop_name: data.shop_name,
-        business_type: null,
-        product_code: null,
+        name:           data.name,
+        mobile:         data.mobile,
+        city:           data.city,
+        state:          null,
+        shop_name:      data.shop_name,
+        business_type:  null,
+        product_code:   null,
         sales_order_code: null,
-        remarks: null,
+        remarks:        null,
         uploaded_files: uploadedFiles.length > 0 ? uploadedFiles : null,
       });
 
-      toast.success('Registered! Downloading catalogue…', { id: toastId });
-      setTimeout(() => downloadCatalogue(), 500);
-      setTimeout(() => router.push('/success'), 1000);
+      toast.success('Registration successful!', { id: toastId });
+      const params = new URLSearchParams({
+        name:     data.name,
+      });
+      setTimeout(() => router.push(`/success?${params.toString()}`), 500);
     } catch (err) {
       console.error(err);
-      toast.error(
-        err instanceof Error ? err.message : 'Something went wrong. Please try again.',
-        { id: toastId }
-      );
+      toast.error('Something went wrong. Please try again.', { id: toastId });
       setIsSubmitting(false);
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="lead-form" noValidate>
+      
+      {/* ── VISITING CARD UPLOAD ── */}
+      <div className="field-group" style={{ marginBottom: 12 }}>
+        <div
+          className={`upload-zone ${isDragOver ? 'dragover' : ''}`}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFile(e.dataTransfer.files); }}
+        >
+          {ocrStatus === 'scanning' ? (
+            <Loader2 size={24} style={{ margin: '0 auto 12px', color: 'var(--gold)', animation: 'spin 1s linear infinite' }} />
+          ) : (
+            <Upload size={24} style={{ margin: '0 auto 12px', color: 'var(--gold)' }} />
+          )}
+          <h3 className="upload-zone-title">Upload Visiting Card (Recommended)</h3>
+          <p className="upload-zone-desc">
+            Upload your visiting card and we will automatically fill your details.
+          </p>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,application/pdf"
+            className="hidden"
+            onChange={(e) => handleFile(e.target.files)}
+          />
+        </div>
+        
+        {fileToUpload && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(201,165,90,0.1)', padding: '10px 14px', borderRadius: 8, marginTop: 12, border: '1px solid rgba(201,165,90,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {ocrStatus === 'done' ? <Sparkles size={16} color="var(--gold)" /> : <ScanLine size={16} color="var(--gold)" />}
+              <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{fileToUpload.name}</span>
+            </div>
+            <button type="button" onClick={(e) => { e.stopPropagation(); setFileToUpload(null); setOcrStatus('idle'); }} style={{ background: 'transparent', border: 'none', color: 'var(--error-red)', cursor: 'pointer' }}>
+              <X size={16} />
+            </button>
+          </div>
+        )}
+      </div>
 
-      {/* ── Full Name ───────────────────────────────────────────────── */}
+      <div className="gold-divider-full" style={{ margin: '8px 0 24px' }} />
+
+      {/* ── REQUIRED FIELDS ── */}
       <div className="field-group">
-        <label htmlFor="name" className="form-label">Full Name *</label>
+        <label htmlFor="name" className="form-label">Your Name</label>
         <input
-          id="name"
-          type="text"
-          autoComplete="name"
-          placeholder="Your full name"
+          id="name" type="text"
           className={`form-input ${errors.name ? 'error' : ''}`}
           {...register('name')}
         />
         {errors.name && <p className="form-error">{errors.name.message}</p>}
       </div>
 
-      {/* ── Mobile ──────────────────────────────────────────────────── */}
       <div className="field-group">
-        <label htmlFor="mobile" className="form-label">Mobile Number *</label>
+        <label htmlFor="mobile" className="form-label">Mobile Number</label>
         <input
-          id="mobile"
-          type="tel"
-          autoComplete="tel"
-          placeholder="10-digit mobile number"
-          maxLength={10}
+          id="mobile" type="tel" maxLength={10} inputMode="numeric"
           className={`form-input ${errors.mobile ? 'error' : ''}`}
           {...register('mobile')}
         />
         {errors.mobile && <p className="form-error">{errors.mobile.message}</p>}
       </div>
 
-      {/* ── City ────────────────────────────────────────────────────── */}
       <div className="field-group">
-        <label htmlFor="city" className="form-label">City *</label>
+        <label htmlFor="shop_name" className="form-label">Business / Boutique Name</label>
         <input
-          id="city"
-          type="text"
-          placeholder="Your city"
-          className={`form-input ${errors.city ? 'error' : ''}`}
-          {...register('city')}
-        />
-        {errors.city && <p className="form-error">{errors.city.message}</p>}
-      </div>
-
-      {/* ── Shop Name ───────────────────────────────────────────────── */}
-      <div className="field-group">
-        <label htmlFor="shop_name" className="form-label">Shop / Boutique Name *</label>
-        <input
-          id="shop_name"
-          type="text"
-          placeholder="Your shop or boutique name"
+          id="shop_name" type="text"
           className={`form-input ${errors.shop_name ? 'error' : ''}`}
           {...register('shop_name')}
         />
         {errors.shop_name && <p className="form-error">{errors.shop_name.message}</p>}
       </div>
 
-      {/* ── Visiting Card Upload ─────────────────────────────────────── */}
       <div className="field-group">
-        <label className="form-label">
-          <CreditCard size={13} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
-          Visiting Card
-          <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6, textTransform: 'none', letterSpacing: 0 }}>
-            (optional)
-          </span>
-        </label>
-
-        {/* Drop zone */}
-        <div
-          className={`upload-zone ${isDragOver ? 'dragover' : ''}`}
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-          onDragLeave={() => setIsDragOver(false)}
-          onDrop={(e) => { e.preventDefault(); setIsDragOver(false); addFiles(e.dataTransfer.files); }}
-        >
-          <Upload size={22} style={{ color: 'var(--gold)', opacity: 0.8, margin: '0 auto 8px' }} />
-          <p style={{ color: 'var(--gold)', fontSize: 13, fontWeight: 600 }}>
-            Click or drag to upload
-          </p>
-          <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 4 }}>
-            JPG, PNG, PDF — max 10 MB
-          </p>
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            accept="image/*,application/pdf"
-            className="hidden"
-            id="visiting-card-upload"
-            onChange={(e) => addFiles(e.target.files)}
-          />
-        </div>
-
-        {/* Previews */}
-        {cards.length > 0 && (
-          <div className="card-previews">
-            {cards.map((c) => (
-              <div key={c.id} className="card-preview-item">
-                {c.preview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.preview} alt={c.file.name} className="card-preview-img" />
-                ) : (
-                  <div className="card-preview-pdf">
-                    <CreditCard size={22} style={{ color: 'var(--gold)', opacity: 0.7 }} />
-                  </div>
-                )}
-                <div className="card-preview-info">
-                  <span className="card-preview-name">{c.file.name}</span>
-                  <span className="card-preview-size">{formatFileSize(c.file.size)}</span>
-                </div>
-                <button
-                  type="button"
-                  className="card-preview-remove"
-                  onClick={() => removeCard(c.id)}
-                  aria-label="Remove file"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        <label htmlFor="city" className="form-label">City</label>
+        <Controller
+          name="city"
+          control={control}
+          defaultValue=""
+          render={({ field }) => (
+            <CityDropdown
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.city?.message}
+            />
+          )}
+        />
+        {errors.city && <p className="form-error">{errors.city.message}</p>}
       </div>
 
-      {/* ── Submit ──────────────────────────────────────────────────── */}
       <button
-        id="submit-registration-btn"
         type="submit"
         disabled={isSubmitting}
-        className="btn-primary w-full"
-        style={{ padding: '15px 24px', fontSize: 16, marginTop: 8 }}
+        className="btn-primary"
+        style={{ marginTop: 12 }}
       >
         {isSubmitting ? (
-          <><Loader2 size={19} className="animate-spin" /> Processing…</>
+          <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Processing…</>
         ) : (
-          <><Send size={19} /> Register &amp; Get Free Catalogue</>
+          'REGISTER NOW'
         )}
       </button>
 
-      <p style={{ textAlign: 'center', fontSize: 11, marginTop: 10, color: 'var(--text-muted)' }}>
-        By registering you agree to receive updates from Shree Radha Studio
-      </p>
     </form>
   );
 }
