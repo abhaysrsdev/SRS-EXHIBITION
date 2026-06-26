@@ -217,22 +217,31 @@ export default function LeadForm() {
         .map((l: string) => l.trim())
         .filter((l: string) => l.length > 2 && !/[@_]/.test(l) && !/\d{5,}/.test(l));
 
-      // 3. Business Name (Check keywords, otherwise default to the first valid line)
-      const bizKw = /\b(pvt|ltd|enterprises|traders|fashions|boutique|collections|studio|store|shop|co\.|garments|apparel|textiles|fabrics|creations|designers|silk|saree)\b/i;
+      // 3. Business Name (Check keywords, otherwise look for ALL CAPS or first line)
+      const bizKw = /\b(pvt|ltd|enterprises|traders|fashions|boutique|collections|studio|store|shop|co\.|garments|apparel|textiles|fabrics|creations|designers|silk|saree|wears|clothing|suits)\b/i;
       let bizLine = lines.find((l: string) => bizKw.test(l));
-      if (!bizLine && lines.length > 0) bizLine = lines[0];
+      
+      if (!bizLine) {
+        const capsLines = lines.filter((l: string) => l === l.toUpperCase() && l.length > 5 && !/\d/.test(l));
+        if (capsLines.length > 0) bizLine = capsLines[0];
+        else if (lines.length > 0) bizLine = lines[0];
+      }
 
       if (bizLine) {
         const cleanBiz = bizLine.replace(/[^a-zA-Z0-9\s&.-]/g, '').trim();
         if (cleanBiz.length > 2) setValue('shop_name', cleanBiz.slice(0, 100), { shouldValidate: true });
       }
 
-      // 4. Contact Name (Check title prefixes, otherwise look for standard 2-3 word names)
+      // 4. Contact Name (Check title prefixes, otherwise look for exactly 2-3 pure alphabetical words)
       const nameKw = /\b(mr\.|mrs\.|ms\.|prop\.|proprietor|auth\.|director|owner|sh\.)\b/i;
       let nameLine = lines.find((l: string) => nameKw.test(l) && l !== bizLine);
       
       if (!nameLine) {
-        nameLine = lines.find((l: string) => /^[A-Z][a-z]+(?: [A-Z][a-z]+){1,2}$/.test(l) && l !== bizLine);
+        nameLine = lines.find((l: string) => {
+          if (l === bizLine) return false;
+          const words = l.split(/\s+/);
+          return (words.length === 2 || words.length === 3) && words.every(w => /^[A-Za-z]+$/.test(w));
+        });
       }
 
       if (nameLine) {
