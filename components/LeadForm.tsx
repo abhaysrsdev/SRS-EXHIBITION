@@ -197,7 +197,43 @@ export default function LeadForm() {
       });
 
       const Tesseract = (window as any).Tesseract;
-      const { data: { text } } = await Tesseract.recognize(file, 'eng', { logger: () => {} });
+      
+      // Auto-detect correct orientation by rotating until a phone number or keyword is found
+      const img = await createImageBitmap(file);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      let bestText = '';
+      let foundValid = false;
+
+      const angles = [0, 90, 270, 180];
+      for (const angle of angles) {
+        if (!ctx) break;
+        if (angle === 0 || angle === 180) {
+          canvas.width = img.width; canvas.height = img.height;
+        } else {
+          canvas.width = img.height; canvas.height = img.width;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((angle * Math.PI) / 180);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+        ctx.restore();
+
+        const { data: { text } } = await Tesseract.recognize(canvas.toDataURL('image/jpeg', 0.8), 'eng', { logger: () => {} });
+        bestText = text;
+
+        // Validation check: If we find a mobile number or business keyword, this is the correct orientation!
+        const hasPhone = /(?:(?:\+|0{0,2})91[\s-]*)?([6-9]\d{2}[\s-]?\d{3}[\s-]?\d{4})/.test(text);
+        const hasBiz = /\b(pvt|ltd|enterprises|traders|fashions|boutique|collections|studio|store|shop|co\.|garments|apparel|textiles)\b/i.test(text);
+        
+        if (hasPhone || hasBiz) {
+          foundValid = true;
+          break;
+        }
+      }
+      
+      const text = bestText;
 
       // 1. Mobile Number (Extract exactly 10 digits ignoring spaces/country codes)
       const phoneMatch = text.match(/(?:(?:\+|0{0,2})91[\s-]*)?([6-9]\d{2}[\s-]?\d{3}[\s-]?\d{4})/);
