@@ -2,138 +2,98 @@
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-
-// ─── VCF Generator ────────────────────────────────────────────────────────────
-
-function downloadVCF(name: string, mobile: string, filename: string) {
-  const vcf = [
-    'BEGIN:VCARD',
-    'VERSION:3.0',
-    `FN:${name}`,
-    `N:${name};;;;`,
-    `TEL;TYPE=CELL:+${mobile}`,
-    `ORG:${name}`,
-    'END:VCARD',
-  ].join('\r\n');
-
-  const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// ─── Inner (uses useSearchParams) ─────────────────────────────────────────────
+import { downloadVCF } from '@/lib/vcf';
 
 function SuccessInner() {
   const params = useSearchParams();
   const name = params.get('name') || 'Customer';
 
   const waMessage = encodeURIComponent(
-    `Jai Shree Shyam\n\nI have registered through the Shree Radha Studio Exhibition Registration page.\n\nPlease share your latest catalogue and collection.`
+    `Jai Shree Shyam 🙏\n\nI have successfully registered through the Shree Radha Studio Exhibition Registration page.\n\nPlease share your latest wholesale catalogue, exhibition details and new collection.`
   );
   
-  const radhikaWa = `https://wa.me/919811798507?text=${waMessage}`;
-  const srsWa = `https://wa.me/919811798507?text=${waMessage}`;
+  const whatsappUrl = `https://wa.me/919811798507?text=${waMessage}`;
 
   return (
     <main className="page-shell" style={{ padding: '32px 16px' }}>
       <div className="card-wrap" style={{ position: 'relative', zIndex: 2 }}>
 
-        {/* ── Heading ── */}
+        {/* ── Welcome Message ── */}
         <div className="anim-1" style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h1 className="page-heading">
+          <h1 className="page-heading" style={{ fontSize: 24, marginBottom: 16 }}>
             <span className="text-gold-gradient">🙏 Jai Shree Shyam</span>
           </h1>
-          <div className="glass-card" style={{ padding: '24px', marginTop: 16, textAlign: 'left' }}>
-            <p style={{ fontSize: 15, color: 'var(--text-primary)', marginBottom: 12 }}>
+          <div className="glass-card" style={{ padding: '24px', textAlign: 'center' }}>
+            <p style={{ fontSize: 16, color: 'var(--text-primary)', marginBottom: 12 }}>
               Dear <strong>{name}</strong>,
             </p>
-            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              We are glad to have you on board the SRS Family.
+            <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              We are glad to have you onboard the SRS Family.
             </p>
-            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginTop: 8 }}>
-              Please save our contacts below to receive our latest product catalogue, exhibition updates, launches and wholesale collections.
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginTop: 12 }}>
+              Please save our contact details below to receive our latest product catalogue, exhibition updates and wholesale collections.
             </p>
           </div>
         </div>
 
         {/* ── Save Contact Section ── */}
-        <div className="anim-2">
-          <h2 className="section-heading">Save Contact</h2>
+        <div className="anim-2" style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
           
-          <div className="contact-card">
-            <div className="contact-info">
-              <div className="contact-name">Radhika Collection Pvt Ltd</div>
-              <div className="contact-num">9811798507</div>
+          {/* Button 1: SRS */}
+          <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Shree Radha Studio Sales</div>
+              <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Mobile: 9811798507</div>
             </div>
-            <button 
-              className="contact-btn"
-              onClick={() => downloadVCF('Radhika Collection Pvt Ltd', '919811798507', 'Radhika-Collection.vcf')}
+            
+            <button
+              onClick={() => downloadVCF('Shree Radha Studio Sales', '9811798507')}
+              className="btn-outline"
             >
-              SAVE RADHIKA CONTACT
+              SAVE SHREE RADHA STUDIO CONTACT
             </button>
+            
+            <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
+              <p>📍 Business Address: [Placeholder Address]</p>
+              <a href="#" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
+            </div>
           </div>
 
-          <div className="contact-card">
-            <div className="contact-info">
-              <div className="contact-name">Shree Radha Studio Sales</div>
-              <div className="contact-num">9811798507</div>
+          {/* Button 2: Radhika */}
+          <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Radhika Collection Pvt Ltd</div>
+              <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Mobile: 9811798507</div>
             </div>
-            <button 
-              className="contact-btn"
-              onClick={() => downloadVCF('Shree Radha Studio Sales', '919811798507', 'Shree-Radha-Studio-Sales.vcf')}
+            
+            <button
+              onClick={() => downloadVCF('Radhika Collection Pvt Ltd', '9811798507')}
+              className="btn-outline"
             >
-              SAVE SRS CONTACT
+              SAVE RADHIKA COLLECTION CONTACT
             </button>
+            
+            <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
+              <p>📍 Business Address: [Placeholder Address]</p>
+              <a href="#" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
+            </div>
           </div>
+
         </div>
 
         <div className="gold-divider-full anim-3" />
 
         {/* ── WhatsApp Section ── */}
-        <div className="anim-3">
-          <h2 className="section-heading">Connect Instantly On WhatsApp</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <a href={radhikaWa} target="_blank" rel="noopener noreferrer" className="btn-whatsapp">
-              MESSAGE RADHIKA COLLECTION
-            </a>
-            <a href={srsWa} target="_blank" rel="noopener noreferrer" className="btn-whatsapp">
-              MESSAGE SHREE RADHA STUDIO
-            </a>
-          </div>
-        </div>
-
-        <div className="gold-divider-full anim-4" />
-
-        {/* ── Information Section ── */}
         <div className="anim-4">
-          <div className="info-grid">
-            <a href="/catalogue.pdf" download="Shree-Radha-Catalogue.pdf" className="btn-outline">
-              LATEST PRODUCT CATALOGUE
-            </a>
-            <button className="btn-outline">
-              EXHIBITION DETAILS
-            </button>
-            <button className="btn-outline">
-              REQUEST SALES CALL
-            </button>
-            <a href={srsWa} target="_blank" rel="noopener noreferrer" className="btn-outline">
-              WHATSAPP SUPPORT
-            </a>
-          </div>
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn-whatsapp" style={{ padding: '20px 24px', fontSize: 16 }}>
+            MESSAGE US ON WHATSAPP
+          </a>
         </div>
 
       </div>
     </main>
   );
 }
-
-// ─── Export ───────────────────────────────────────────────────────────────────
 
 export default function SuccessPage() {
   return (

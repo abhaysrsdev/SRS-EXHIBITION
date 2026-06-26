@@ -1,0 +1,98 @@
+import { NextResponse } from 'next/server';
+import { GoogleSpreadsheet } from 'google-spreadsheet';
+import { JWT } from 'google-auth-library';
+
+// The ID from the URL the user provided
+const SPREADSHEET_ID = '18nfrZNdy6rUtjIU7TyzMdnI5MWqkp3oaJH8RT-6M3pE';
+
+export async function POST(request: Request) {
+  try {
+    const data = await request.json();
+    
+    // Ensure credentials exist
+    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+    if (!email || !key) {
+      console.warn('Google Sheets integration skipped: Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY in environment variables.');
+      return NextResponse.json({ success: false, message: 'Google Sheets credentials not configured.' }, { status: 500 });
+    }
+
+    const serviceAccountAuth = new JWT({
+      email: email,
+      key: key,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const doc = new GoogleSpreadsheet(SPREADSHEET_ID, serviceAccountAuth);
+
+    // Implementation of a retry mechanism with exponential backoff
+    const MAX_RETRIES = 3;
+    let attempt = 0;
+    
+    while (attempt < MAX_RETRIES) {
+      try {
+        await doc.loadInfo();
+        const sheet = doc.sheetsByIndex[0];
+
+        // Ensure headers exist (if sheet is completely empty, we need to set them)
+        // If the sheet has no header row, loadHeaderRow() might throw an error or rows might not load.
+        try {
+          await sheet.loadHeaderRow();
+        } catch (e) {
+          // If loading header fails, it's likely empty. Let's set the headers.
+          await sheet.setHeaderRow([
+            'Timestamp',
+            'Business / Boutique Name',
+            'Contact Person Name',
+            'Mobile Number',
+            'City',
+            'Visiting Card File URL',
+            'Lead Source',
+            'Lead Status'
+          ]);
+        }
+
+        const rows = await sheet.getRows();
+        
+        // Check for existing mobile number
+        const existingRow = rows.find(row => row.get('Mobile Number') === data.mobile);
+
+        const rowData = {
+          'Timestamp': data.timestamp || new Date().toLocaleString(),
+          'Business / Boutique Name': data.shop_name || '',
+          'Contact Person Name': data.name || '',
+          'Mobile Number': data.mobile,
+          'City': data.city || '',
+          'Visiting Card File URL': data.file_url || '',
+          'Lead Source': data.lead_source || 'Website Registration',
+          'Lead Status': data.lead_status || 'New Lead'
+        };
+
+        if (existingRow) {
+          // Update the existing row
+          existingRow.assign(rowData);
+          await existingRow.save();
+        } else {
+          // Append a new row
+          await sheet.addRow(rowData);
+        }
+
+        return NextResponse.json({ success: true });
+        
+      } catch (err: any) {
+        attempt++;
+        console.error(`Google Sheets Sync Attempt ${attempt} failed:`, err.message);
+        if (attempt >= MAX_RETRIES) {
+          throw err;
+        }
+        // Wait before retrying (exponential backoff)
+        await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempt)));
+      }
+    }
+
+  } catch (error: any) {
+    console.error('Failed to sync with Google Sheets after all retries:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

@@ -153,7 +153,7 @@ function CityDropdown({
               onMouseDown={() => select(query)}
               onMouseEnter={() => setFocused(allOptions.length - 1)}
             >
-              Use: &ldquo;{query}&rdquo;
+              Other / Enter Manually: "{query}"
             </div>
           )}
         </div>
@@ -164,10 +164,12 @@ function CityDropdown({
 
 // ─── Main Form ────────────────────────────────────────────────────────────────
 
+import { downloadVCF } from '@/lib/vcf';
+
 export default function LeadForm() {
-  const router = useRouter();
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [ocrStatus, setOcrStatus] = useState<'idle' | 'scanning' | 'done' | 'failed'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -182,7 +184,7 @@ export default function LeadForm() {
 
   // ── OCR ───────────────────────────────────────────────────────────────────
   const runOCR = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/')) return;
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
     setOcrStatus('scanning');
     try {
       await new Promise<void>((resolve, reject) => {
@@ -258,17 +260,40 @@ export default function LeadForm() {
         uploaded_files: uploadedFiles.length > 0 ? uploadedFiles : null,
       });
 
+      // Trigger Google Sheets sync in the background
+      fetch('/api/leads/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toLocaleString(),
+          name: data.name,
+          mobile: data.mobile,
+          city: data.city,
+          shop_name: data.shop_name,
+          file_url: uploadedFiles.length > 0 ? uploadedFiles[0].url : '',
+          lead_source: 'Website Registration',
+          lead_status: 'New Lead'
+        })
+      }).catch(err => console.error('Failed to trigger Google Sheets sync:', err));
+
       toast.success('Registration successful!', { id: toastId });
-      const params = new URLSearchParams({
-        name:     data.name,
-      });
-      setTimeout(() => router.push(`/success?${params.toString()}`), 500);
+      setIsRegistered(true);
+      setIsSubmitting(false);
     } catch (err) {
       console.error(err);
       toast.error('Something went wrong. Please try again.', { id: toastId });
       setIsSubmitting(false);
     }
   };
+
+  if (isRegistered) {
+    return (
+      <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--success-green)' }}>
+        <h3 style={{ fontSize: 20, marginBottom: 8 }}>✅ Registration Successful!</h3>
+        <p style={{ color: 'var(--text-muted)' }}>Thank you for sharing your details.</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="lead-form" noValidate>
@@ -287,9 +312,12 @@ export default function LeadForm() {
           ) : (
             <Upload size={24} style={{ margin: '0 auto 12px', color: 'var(--gold)' }} />
           )}
-          <h3 className="upload-zone-title">Upload Visiting Card (Recommended)</h3>
+          <h3 className="upload-zone-title">📇 Upload Visiting Card (Optional)</h3>
           <p className="upload-zone-desc">
-            Upload your visiting card and we will automatically fill your details.
+            Upload your visiting card for quick registration. Our OCR will automatically fill your details.
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
+            Supported: JPG, PNG, JPEG, PDF
           </p>
           <input
             ref={inputRef}
@@ -317,13 +345,13 @@ export default function LeadForm() {
 
       {/* ── REQUIRED FIELDS ── */}
       <div className="field-group">
-        <label htmlFor="name" className="form-label">Your Name</label>
+        <label htmlFor="shop_name" className="form-label">Business / Boutique Name</label>
         <input
-          id="name" type="text"
-          className={`form-input ${errors.name ? 'error' : ''}`}
-          {...register('name')}
+          id="shop_name" type="text"
+          className={`form-input ${errors.shop_name ? 'error' : ''}`}
+          {...register('shop_name')}
         />
-        {errors.name && <p className="form-error">{errors.name.message}</p>}
+        {errors.shop_name && <p className="form-error">{errors.shop_name.message}</p>}
       </div>
 
       <div className="field-group">
@@ -334,16 +362,6 @@ export default function LeadForm() {
           {...register('mobile')}
         />
         {errors.mobile && <p className="form-error">{errors.mobile.message}</p>}
-      </div>
-
-      <div className="field-group">
-        <label htmlFor="shop_name" className="form-label">Business / Boutique Name</label>
-        <input
-          id="shop_name" type="text"
-          className={`form-input ${errors.shop_name ? 'error' : ''}`}
-          {...register('shop_name')}
-        />
-        {errors.shop_name && <p className="form-error">{errors.shop_name.message}</p>}
       </div>
 
       <div className="field-group">
@@ -361,6 +379,16 @@ export default function LeadForm() {
           )}
         />
         {errors.city && <p className="form-error">{errors.city.message}</p>}
+      </div>
+
+      <div className="field-group">
+        <label htmlFor="name" className="form-label">Your Name</label>
+        <input
+          id="name" type="text"
+          className={`form-input ${errors.name ? 'error' : ''}`}
+          {...register('name')}
+        />
+        {errors.name && <p className="form-error">{errors.name.message}</p>}
       </div>
 
       <button
