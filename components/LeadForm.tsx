@@ -219,7 +219,7 @@ export default function LeadForm() {
 
       // 3. Business Name (Check keywords, otherwise default to the first valid line)
       const bizKw = /\b(pvt|ltd|enterprises|traders|fashions|boutique|collections|studio|store|shop|co\.|garments|apparel|textiles|fabrics|creations|designers|silk|saree)\b/i;
-      let bizLine = lines.find((l) => bizKw.test(l));
+      let bizLine = lines.find((l: string) => bizKw.test(l));
       if (!bizLine && lines.length > 0) bizLine = lines[0];
 
       if (bizLine) {
@@ -229,10 +229,10 @@ export default function LeadForm() {
 
       // 4. Contact Name (Check title prefixes, otherwise look for standard 2-3 word names)
       const nameKw = /\b(mr\.|mrs\.|ms\.|prop\.|proprietor|auth\.|director|owner|sh\.)\b/i;
-      let nameLine = lines.find((l) => nameKw.test(l) && l !== bizLine);
+      let nameLine = lines.find((l: string) => nameKw.test(l) && l !== bizLine);
       
       if (!nameLine) {
-        nameLine = lines.find((l) => /^[A-Z][a-z]+(?: [A-Z][a-z]+){1,2}$/.test(l) && l !== bizLine);
+        nameLine = lines.find((l: string) => /^[A-Z][a-z]+(?: [A-Z][a-z]+){1,2}$/.test(l) && l !== bizLine);
       }
 
       if (nameLine) {
