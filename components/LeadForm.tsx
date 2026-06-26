@@ -199,23 +199,46 @@ export default function LeadForm() {
       const Tesseract = (window as any).Tesseract;
       const { data: { text } } = await Tesseract.recognize(file, 'eng', { logger: () => {} });
 
-      // Mobile
-      const phoneMatch = text.match(/[6-9]\d{9}/);
-      if (phoneMatch) setValue('mobile', phoneMatch[0], { shouldValidate: true });
+      // 1. Mobile Number (Extract exactly 10 digits ignoring spaces/country codes)
+      const phoneMatch = text.match(/(?:(?:\+|0{0,2})91[\s-]*)?([6-9]\d{2}[\s-]?\d{3}[\s-]?\d{4})/);
+      if (phoneMatch) {
+        const cleanPhone = phoneMatch[0].replace(/\D/g, '').slice(-10);
+        setValue('mobile', cleanPhone, { shouldValidate: true });
+      }
 
-      // City
-      const lower = text.toLowerCase();
-      const foundCity = INDIAN_CITIES.find((c) => lower.includes(c.toLowerCase()));
-      if (foundCity) setValue('city', foundCity, { shouldValidate: true });
+      // 2. City (Use word boundaries to prevent partial matches like 'Sales' matching 'Salem')
+      const foundCity = INDIAN_CITIES.find((c) => new RegExp(`\\b${c}\\b`, 'i').test(text));
+      if (foundCity) {
+        setValue('city', foundCity, { shouldValidate: true });
+      }
 
-      // Name & Business
-      const lines = text.split('\n').map((l: string) => l.trim()).filter(Boolean);
-      const nameLine = lines.find((l: string) => /^[A-Z][a-z]+ [A-Z][a-z]+/.test(l)) || lines[0];
-      if (nameLine && nameLine.length < 60) setValue('name', nameLine, { shouldValidate: true });
+      // Pre-process lines (Remove short lines, emails, and phone numbers)
+      const lines = text.split('\n')
+        .map((l: string) => l.trim())
+        .filter((l: string) => l.length > 2 && !/[@_]/.test(l) && !/\d{5,}/.test(l));
 
-      const bizKw = /pvt|ltd|enterprises|traders|fashions|boutique|collections|studio|store|shop|co\.|&/i;
-      const bizLine = lines.find((l: string) => bizKw.test(l) && l !== nameLine);
-      if (bizLine && bizLine.length < 150) setValue('shop_name', bizLine, { shouldValidate: true });
+      // 3. Business Name (Check keywords, otherwise default to the first valid line)
+      const bizKw = /\b(pvt|ltd|enterprises|traders|fashions|boutique|collections|studio|store|shop|co\.|garments|apparel|textiles|fabrics|creations|designers|silk|saree)\b/i;
+      let bizLine = lines.find((l) => bizKw.test(l));
+      if (!bizLine && lines.length > 0) bizLine = lines[0];
+
+      if (bizLine) {
+        const cleanBiz = bizLine.replace(/[^a-zA-Z0-9\s&.-]/g, '').trim();
+        if (cleanBiz.length > 2) setValue('shop_name', cleanBiz.slice(0, 100), { shouldValidate: true });
+      }
+
+      // 4. Contact Name (Check title prefixes, otherwise look for standard 2-3 word names)
+      const nameKw = /\b(mr\.|mrs\.|ms\.|prop\.|proprietor|auth\.|director|owner|sh\.)\b/i;
+      let nameLine = lines.find((l) => nameKw.test(l) && l !== bizLine);
+      
+      if (!nameLine) {
+        nameLine = lines.find((l) => /^[A-Z][a-z]+(?: [A-Z][a-z]+){1,2}$/.test(l) && l !== bizLine);
+      }
+
+      if (nameLine) {
+        const cleanName = nameLine.replace(nameKw, '').replace(/[^a-zA-Z\s]/g, '').trim().replace(/\s+/g, ' ');
+        if (cleanName.length > 2) setValue('name', cleanName.slice(0, 60), { shouldValidate: true });
+      }
 
       setOcrStatus('done');
       toast.success('Card scanned successfully!');
