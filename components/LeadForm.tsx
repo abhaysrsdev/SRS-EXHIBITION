@@ -371,24 +371,25 @@ export default function LeadForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="lead-form" noValidate>
       
       {/* ── VISITING CARD UPLOAD ── */}
-      <div className="field-group" style={{ marginBottom: 12 }}>
+      <div className="field-group" style={{ marginBottom: 8 }}>
         <div
           className={`upload-zone ${isDragOver ? 'dragover' : ''}`}
+          style={{ padding: '12px 8px' }}
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
           onDragLeave={() => setIsDragOver(false)}
           onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFile(e.dataTransfer.files); }}
         >
           {ocrStatus === 'scanning' ? (
-            <Loader2 size={24} style={{ margin: '0 auto 12px', color: 'var(--gold)', animation: 'spin 1s linear infinite' }} />
+            <Loader2 size={24} style={{ margin: '0 auto 8px', color: 'var(--gold)', animation: 'spin 1s linear infinite' }} />
           ) : (
-            <Upload size={24} style={{ margin: '0 auto 12px', color: 'var(--gold)' }} />
+            <Upload size={24} style={{ margin: '0 auto 8px', color: 'var(--gold)' }} />
           )}
-          <h3 className="upload-zone-title">📇 Upload Visiting Card (Optional)</h3>
-          <p className="upload-zone-desc">
-            Upload your visiting card for quick registration. Our OCR will automatically fill your details.
+          <h3 className="upload-zone-title" style={{ fontSize: 14, marginBottom: 2 }}>📇 Upload Visiting Card (Optional)</h3>
+          <p className="upload-zone-desc" style={{ fontSize: 12 }}>
+            Upload for Quick Auto Fill
           </p>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
             Supported: JPG, PNG, JPEG, PDF
           </p>
           <input
@@ -413,7 +414,7 @@ export default function LeadForm() {
         )}
       </div>
 
-      <div className="gold-divider-full" style={{ margin: '8px 0 24px' }} />
+      <div className="gold-divider-full" style={{ margin: '8px 0 8px 0' }} />
 
       {/* ── REQUIRED FIELDS ── */}
       <div className="field-group">
