@@ -40,7 +40,7 @@ item5.TEL:+919811798414
 item5.X-ABLabel:WhatsApp
 EMAIL;TYPE=WORK:shreeradhastudio@gmail.com
 URL:${websiteUrl}
-ADR;TYPE=WORK:;;Shree Radha Studio\\, New Post Office\\, 9/1112 Matke Wali Gali\\, Opposite Gandhi Nagar\\, Block 9;Delhi;;110031;India
+ADR;TYPE=WORK:;;4337/38\\, Bhairon Wali Gali\\, Jogiwada\\, Nai Sarak\\, Chandni Chowk;New Delhi;Delhi;110006;India
 END:VCARD`;
   }
 
