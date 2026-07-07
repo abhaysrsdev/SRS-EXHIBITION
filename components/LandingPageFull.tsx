@@ -84,7 +84,7 @@ export default function LandingPageFull() {
           </button>
           
           <div style={{ marginTop: 2, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
-            <a href="https://maps.google.com/?q=Gandhi+Nagar,+New+Delhi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>📍 View on Google Maps</a>
+            <a href="https://maps.google.com/?q=4337/38,+Bhairon+Wali+Gali,+Jogiwada,+Nai+Sarak,+Chandni+Chowk,+New+Delhi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>📍 View on Google Maps</a>
           </div>
         </div>
 
