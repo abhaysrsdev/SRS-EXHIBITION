@@ -9,16 +9,8 @@ export function downloadVCF(name: string, mobile: string, company?: string) {
 VERSION:3.0
 FN:Radhika Collection Pvt Ltd
 ORG:Radhika Collection Pvt Ltd
-item1.TEL:+919811798414
-item1.X-ABLabel:Sales & Orders
-item2.TEL:+919811798826
-item2.X-ABLabel:Sales & Orders
-item3.TEL:+919811798243
-item3.X-ABLabel:Accounts
-item4.TEL:+919811798802
-item4.X-ABLabel:Accounts
-item5.TEL:+919811798414
-item5.X-ABLabel:WhatsApp
+item1.TEL:+919811798281
+item1.X-ABLabel:Mobile & WhatsApp
 EMAIL;TYPE=WORK:shreeradhastudio@gmail.com
 URL:${websiteUrl}
 ADR;TYPE=WORK:;;4337/38\\, Bhairon Wali Gali\\, Jogiwada\\, Nai Sarak\\, Chandni Chowk;New Delhi;Delhi;110006;India

@@ -94,7 +94,7 @@ export default function LandingPageFull() {
         <div className="glass-card anim-2" style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: 10 }}>
           <div style={{ textAlign: 'center', marginBottom: 2 }}>
             <div style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Radhika Collection Pvt Ltd</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Mobile: 9811798414</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Mobile: 9811798281</div>
           </div>
           
           <button onClick={(e) => { e.preventDefault(); setContactType('radhika'); }} className="btn-outline" style={{ padding: '6px 12px', fontSize: '11px' }}>

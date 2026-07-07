@@ -65,7 +65,7 @@ function SuccessInner() {
           <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ textAlign: 'center', marginBottom: 8 }}>
               <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Radhika Collection Pvt Ltd</div>
-              <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Mobile: 9811798507</div>
+              <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Mobile: 9811798281</div>
             </div>
             
             <button
