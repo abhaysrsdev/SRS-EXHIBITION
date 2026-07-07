@@ -22,18 +22,26 @@ export default function LandingPageFull() {
             1. HEADER
             ================================================== */}
         <header className="page-header anim-1" style={{ marginBottom: 12 }}>
-          <img 
-            src="/logo.jpg" 
-            alt="Shree Radha Studio Logo" 
-            style={{ 
-              display: 'block', 
-              margin: '0 auto -12px auto', 
-              width: '180px', 
-              height: 'auto',
-              objectFit: 'contain',
-              borderRadius: '8px'
-            }} 
-          />
+          <div style={{
+            width: '180px',
+            height: '90px',
+            margin: '0 auto 10px auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            borderRadius: '8px'
+          }}>
+            <img 
+              src="/logo.jpg" 
+              alt="Shree Radha Studio Logo" 
+              style={{ 
+                width: '180px',
+                height: '180px',
+                objectFit: 'contain'
+              }} 
+            />
+          </div>
           <h1 className="page-heading">
             <span className="text-gold-gradient">Customer Registration</span>
           </h1>
