@@ -57,7 +57,7 @@ function SuccessInner() {
             
             <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
               <p>📍 New Post Office, 9/1112 Matke Wali Gali, Opposite Gandhi Nagar, Block 9, Delhi 110031</p>
-              <a href="https://maps.google.com/?q=Shree+Radha+Studio,+New+post+office,+9/1112,+Matke+Wali+Gali,+opposite+Gandhi+Nagar,+Block+9,+Police+station,+Delhi,+110031" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
+              <a href="https://maps.google.com/?q=Shree+Radha+Studio,+Gandhi+Nagar,+Delhi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
             </div>
           </div>
 
