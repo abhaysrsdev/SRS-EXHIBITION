@@ -8,11 +8,14 @@ import ContactModal from '@/components/ContactModal';
 function SuccessInner() {
   const params = useSearchParams();
   const name = params.get('name') || 'Customer';
+  const city = params.get('city') || '';
   const [contactType, setContactType] = useState<'shree' | 'radhika' | null>(null);
 
-  const waMessage = encodeURIComponent(
-    `Jai Shree Shyam 🙏\n\nI have successfully registered through the Shree Radha Studio Exhibition Registration page.\n\nPlease share your latest wholesale catalogue, exhibition details and new collection.`
-  );
+  const baseMessage = `Jai Shree Shyam 🙏\n\nI have successfully registered through the Shree Radha Studio Exhibition Registration page.`;
+  const detailMessage = name !== 'Customer' ? `\n\nMy Name: ${name}${city ? `\nCity: ${city}` : ''}` : '';
+  const endMessage = `\n\nPlease share your latest wholesale catalogue, exhibition details and new collection.`;
+  
+  const waMessage = encodeURIComponent(baseMessage + detailMessage + endMessage);
   
   const whatsappUrl = `https://wa.me/919811798507?text=${waMessage}`;
 

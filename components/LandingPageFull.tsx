@@ -8,10 +8,13 @@ import ContactModal from '@/components/ContactModal';
 export default function LandingPageFull() {
   const [showGST, setShowGST] = useState(false);
   const [contactType, setContactType] = useState<'shree' | 'radhika' | null>(null);
+  const [visitorData, setVisitorData] = useState<{name: string, city: string} | null>(null);
 
-  const waMessage = encodeURIComponent(
-    `Jai Shree Shyam 🙏\n\nI have successfully registered through the Shree Radha Studio Exhibition Registration page.\n\nPlease share your latest wholesale catalogue and exhibition details.`
-  );
+  const baseMessage = `Jai Shree Shyam 🙏\n\nI have successfully registered through the Shree Radha Studio Exhibition Registration page.`;
+  const detailMessage = visitorData ? `\n\nMy Name: ${visitorData.name}\nCity: ${visitorData.city}` : '';
+  const endMessage = `\n\nPlease share your latest wholesale catalogue and exhibition details.`;
+  
+  const waMessage = encodeURIComponent(baseMessage + detailMessage + endMessage);
   const whatsappUrl = `https://wa.me/919811798414?text=${waMessage}`;
 
   return (
@@ -110,7 +113,7 @@ export default function LandingPageFull() {
             REGISTRATION FORM
             ================================================== */}
         <div className="reg-card glass-card anim-4" style={{ marginBottom: 16, marginTop: 0 }}>
-          <LeadForm />
+          <LeadForm onSuccess={(name, city) => setVisitorData({ name, city })} />
         </div>
 
 

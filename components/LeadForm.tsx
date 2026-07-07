@@ -346,6 +346,10 @@ export default function LeadForm() {
       toast.success('Registration successful!', { id: toastId });
       setIsRegistered(true);
       setIsSubmitting(false);
+      
+      if (onSuccess) {
+        onSuccess(data.name, data.city);
+      }
     } catch (err) {
       console.error(err);
       toast.error('Something went wrong. Please try again.', { id: toastId });
