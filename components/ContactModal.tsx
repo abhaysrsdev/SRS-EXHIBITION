@@ -39,7 +39,7 @@ export default function ContactModal({ type, onClose }: { type: 'shree' | 'radhi
               <p><strong>WhatsApp:</strong> 9811798414</p>
             </>
           )}
-          <p><strong>Email:</strong> shreeradhastudio@gmail.com</p>
+          <p><strong>Email:</strong> {isRadhika ? 'RADHIKADELHI6@gmail.com' : 'shreeradhastudio@gmail.com'}</p>
           <p><strong>Address:</strong> {isRadhika 
             ? '4337/38, Bhairon Wali Gali, Jogiwada, Nai Sarak, Chandni Chowk, New Delhi, Delhi 110006' 
             : 'New Post Office, 9/1112 Matke Wali Gali, Opposite Gandhi Nagar, Block 9, Delhi 110031'}

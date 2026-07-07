@@ -11,7 +11,7 @@ FN:Radhika Collection Pvt Ltd
 ORG:Radhika Collection Pvt Ltd
 item1.TEL:+919811798281
 item1.X-ABLabel:Mobile & WhatsApp
-EMAIL;TYPE=WORK:shreeradhastudio@gmail.com
+EMAIL;TYPE=WORK:RADHIKADELHI6@gmail.com
 URL:${websiteUrl}
 ADR;TYPE=WORK:;;4337/38\\, Bhairon Wali Gali\\, Jogiwada\\, Nai Sarak\\, Chandni Chowk;New Delhi;Delhi;110006;India
 END:VCARD`;
