@@ -1,4 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shree Radha Exhibition
+
+This is a Next.js application designed to manage exhibition data, leads, and assets. It integrates with Supabase for data management and Google Spreadsheets for reporting or data syncing.
+
+## Tech Stack & Features
+
+*   **Framework:** [Next.js](https://nextjs.org/) (v16.2.9)
+*   **UI Library:** React 19
+*   **Styling:** Tailwind CSS (v4)
+*   **Icons:** Lucide React
+*   **Forms & Validation:** React Hook Form + Zod
+*   **Database & Auth:** Supabase (`@supabase/supabase-js`, `@supabase/ssr`)
+*   **External Integrations:** Google Spreadsheet API (`google-spreadsheet`, `google-auth-library`)
+*   **OCR / Image Processing:** Tesseract.js
+*   **Notifications:** React Hot Toast
+
+## Dependencies
+
+Here is a comprehensive list of the core dependencies used in this project:
+
+### Main Dependencies
+*   `@hookform/resolvers`: ^5.4.0
+*   `@supabase/ssr`: ^0.12.0
+*   `@supabase/supabase-js`: ^2.108.2
+*   `google-auth-library`: ^10.9.0
+*   `google-spreadsheet`: ^5.3.0
+*   `lucide-react`: ^1.21.0
+*   `next`: 16.2.9
+*   `react`: 19.2.4
+*   `react-dom`: 19.2.4
+*   `react-hook-form`: ^7.80.0
+*   `react-hot-toast`: ^2.6.0
+*   `tesseract.js`: ^7.0.0
+*   `zod`: ^4.4.3
+
+### Dev Dependencies
+*   `@tailwindcss/postcss`: ^4
+*   `@types/node`: ^20
+*   `@types/react`: ^19
+*   `@types/react-dom`: ^19
+*   `eslint`: ^9
+*   `eslint-config-next`: 16.2.9
+*   `pg`: ^8.22.0
+*   `tailwindcss`: ^4
+*   `typescript`: ^5
 
 ## Getting Started
 
@@ -16,21 +60,6 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ensure you have your environment variables set up properly before starting the application, specifically for **Supabase** and **Google Auth**. Check the `.env.local` file for configurations.

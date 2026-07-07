@@ -3,14 +3,16 @@
 import { useState } from 'react';
 import LeadForm from '@/components/LeadForm';
 import { downloadVCF } from '@/lib/vcf';
+import ContactModal from '@/components/ContactModal';
 
 export default function LandingPageFull() {
   const [showGST, setShowGST] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const waMessage = encodeURIComponent(
     `Jai Shree Shyam 🙏\n\nI have successfully registered through the Shree Radha Studio Exhibition Registration page.\n\nPlease share your latest wholesale catalogue and exhibition details.`
   );
-  const whatsappUrl = `https://wa.me/919811798507?text=${waMessage}`;
+  const whatsappUrl = `https://wa.me/919811798414?text=${waMessage}`;
 
   return (
     <main className="page-shell">
@@ -54,10 +56,10 @@ export default function LandingPageFull() {
         <div className="glass-card anim-2" style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: 10 }}>
           <div style={{ textAlign: 'center', marginBottom: 2 }}>
             <div style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Shree Radha Studio</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Mobile: 9811798507</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Mobile: 9811798414</div>
           </div>
           
-          <button onClick={() => downloadVCF('Shree Radha Studio', '9811798507')} className="btn-outline" style={{ padding: '6px 12px', fontSize: '11px' }}>
+          <button onClick={(e) => { e.preventDefault(); setShowContactModal(true); }} className="btn-outline" style={{ padding: '6px 12px', fontSize: '11px' }}>
             SAVE CONTACT
           </button>
           
@@ -72,10 +74,10 @@ export default function LandingPageFull() {
         <div className="glass-card anim-2" style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: 10 }}>
           <div style={{ textAlign: 'center', marginBottom: 2 }}>
             <div style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Radhika Collection Pvt Ltd</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Mobile: 9811798507</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Mobile: 9811798414</div>
           </div>
           
-          <button onClick={() => downloadVCF('Radhika Collection Pvt Ltd', '9811798507')} className="btn-outline" style={{ padding: '6px 12px', fontSize: '11px' }}>
+          <button onClick={(e) => { e.preventDefault(); setShowContactModal(true); }} className="btn-outline" style={{ padding: '6px 12px', fontSize: '11px' }}>
             SAVE CONTACT
           </button>
           
@@ -103,6 +105,7 @@ export default function LandingPageFull() {
 
         </div>
 
+        <ContactModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
       </div>
     </main>
   );

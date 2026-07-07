@@ -1,12 +1,14 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { downloadVCF } from '@/lib/vcf';
+import ContactModal from '@/components/ContactModal';
 
 function SuccessInner() {
   const params = useSearchParams();
   const name = params.get('name') || 'Customer';
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const waMessage = encodeURIComponent(
     `Jai Shree Shyam 🙏\n\nI have successfully registered through the Shree Radha Studio Exhibition Registration page.\n\nPlease share your latest wholesale catalogue, exhibition details and new collection.`
@@ -47,7 +49,7 @@ function SuccessInner() {
             </div>
             
             <button
-              onClick={() => downloadVCF('Shree Radha Studio Sales', '9811798507')}
+              onClick={(e) => { e.preventDefault(); setShowContactModal(true); }}
               className="btn-outline"
             >
               SAVE SHREE RADHA STUDIO CONTACT
@@ -67,7 +69,7 @@ function SuccessInner() {
             </div>
             
             <button
-              onClick={() => downloadVCF('Radhika Collection Pvt Ltd', '9811798507')}
+              onClick={(e) => { e.preventDefault(); setShowContactModal(true); }}
               className="btn-outline"
             >
               SAVE RADHIKA COLLECTION CONTACT
@@ -90,6 +92,7 @@ function SuccessInner() {
           </a>
         </div>
 
+        <ContactModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
       </div>
     </main>
   );

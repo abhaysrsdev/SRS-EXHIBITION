@@ -58,8 +58,9 @@ export async function POST(request: Request) {
         // Check for existing mobile number
         const existingRow = rows.find(row => row.get('Mobile Number') === data.mobile);
 
+        const hasTimestamp2 = sheet.headerValues.includes('Timestamp2');
         const rowData = {
-          'Timestamp': data.timestamp || new Date().toLocaleString(),
+          [hasTimestamp2 ? 'Timestamp2' : 'Timestamp']: data.timestamp || new Date().toLocaleString(),
           'Business / Boutique Name': data.shop_name || '',
           'Contact Person Name': data.name || '',
           'Mobile Number': data.mobile,

@@ -1,4 +1,4 @@
-'use client';
+     'use client';
 
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -314,26 +314,36 @@ export default function LeadForm() {
     try {
       let uploadedFiles: UploadedFile[] = [];
       if (fileToUpload) {
-        const leadId = generateLeadId();
-        const uf = await uploadFile(fileToUpload, 'visiting_card', leadId);
-        uploadedFiles.push(uf);
+        try {
+          const leadId = generateLeadId();
+          const uf = await uploadFile(fileToUpload, 'visiting_card', leadId);
+          uploadedFiles.push(uf);
+        } catch (err) {
+          console.error('File upload failed:', err);
+          toast.error('File upload failed, but saving details...', { id: toastId });
+        }
       }
 
-      await insertLead({
-        name:           data.name,
-        mobile:         data.mobile,
-        city:           data.city,
-        state:          null,
-        shop_name:      data.shop_name,
-        business_type:  null,
-        product_code:   null,
-        sales_order_code: null,
-        remarks:        null,
-        uploaded_files: uploadedFiles.length > 0 ? uploadedFiles : null,
-      });
+      try {
+        await insertLead({
+          name:           data.name,
+          mobile:         data.mobile,
+          city:           data.city,
+          state:          null,
+          shop_name:      data.shop_name,
+          business_type:  null,
+          product_code:   null,
+          sales_order_code: null,
+          remarks:        null,
+          uploaded_files: uploadedFiles.length > 0 ? uploadedFiles : null,
+        });
+      } catch (err) {
+        console.error('Supabase DB insert failed:', err);
+        // We will continue to save to Google Sheets even if Supabase fails
+      }
 
       // Trigger Google Sheets sync in the background
-      fetch('/api/leads/sync', {
+      await fetch('/api/leads/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -346,7 +356,7 @@ export default function LeadForm() {
           lead_source: 'Website Registration',
           lead_status: 'New Lead'
         })
-      }).catch(err => console.error('Failed to trigger Google Sheets sync:', err));
+      });
 
       toast.success('Registration successful!', { id: toastId });
       setIsRegistered(true);
