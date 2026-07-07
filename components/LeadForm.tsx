@@ -43,10 +43,12 @@ function CityDropdown({
   value,
   onChange,
   error,
+  highlighted,
 }: {
   value: string;
   onChange: (v: string) => void;
   error?: string;
+  highlighted?: boolean;
 }) {
   const [query, setQuery] = useState(value || '');
   const [open, setOpen] = useState(false);
@@ -110,7 +112,7 @@ function CityDropdown({
           autoComplete="off"
           placeholder="Select City"
           value={query}
-          className={`form-input ${error ? 'error' : ''}`}
+          className={`form-input ${error ? 'error' : ''} ${highlighted ? 'highlighted-field' : ''}`}
           style={{ paddingRight: 40 }}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -172,6 +174,8 @@ export default function LeadForm() {
   const [isRegistered, setIsRegistered] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [ocrStatus, setOcrStatus] = useState<'idle' | 'scanning' | 'done' | 'failed'>('idle');
+  const [ocrFields, setOcrFields] = useState<Record<string, boolean>>({});
+  const [ocrConfidence, setOcrConfidence] = useState<'high' | 'low' | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -186,112 +190,72 @@ export default function LeadForm() {
   const runOCR = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
     setOcrStatus('scanning');
+    setOcrFields({});
+    setOcrConfidence(null);
     try {
-      await new Promise<void>((resolve, reject) => {
-        if ((window as any).Tesseract) { resolve(); return; }
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed'));
-        document.head.appendChild(script);
+      // Fast Client-side Compression
+      const img = await createImageBitmap(file);
+      const canvas = document.createElement('canvas');
+      const MAX_SIZE = 1500;
+      let width = img.width;
+      let height = img.height;
+      if (width > height && width > MAX_SIZE) {
+        height *= MAX_SIZE / width;
+        width = MAX_SIZE;
+      } else if (height > MAX_SIZE) {
+        width *= MAX_SIZE / height;
+        height = MAX_SIZE;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas not supported');
+      
+      // Apply grayscale and contrast filter for better OCR (optional but helps)
+      ctx.filter = 'grayscale(100%) contrast(1.2)';
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      
+      const res = await fetch('/api/ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Image })
       });
-
-      const Tesseract = (window as any).Tesseract;
-      const worker = await Tesseract.createWorker('eng', 1, { logger: () => {} });
-      let bestText = '';
-
-      try {
-        // Attempt to parse as image (which allows canvas rotation)
-        const img = await createImageBitmap(file);
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        const angles = [0, 90, 270, 180];
-        for (const angle of angles) {
-          if (!ctx) break;
-          if (angle === 0 || angle === 180) {
-            canvas.width = img.width; canvas.height = img.height;
-          } else {
-            canvas.width = img.height; canvas.height = img.width;
-          }
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.save();
-          ctx.translate(canvas.width / 2, canvas.height / 2);
-          ctx.rotate((angle * Math.PI) / 180);
-          ctx.drawImage(img, -img.width / 2, -img.height / 2);
-          ctx.restore();
-
-          const { data: { text } } = await worker.recognize(canvas.toDataURL('image/jpeg', 0.8));
-          bestText = text;
-
-          // Validation check: If we find a mobile number or business keyword, this is the correct orientation!
-          const hasPhone = /(?:(?:\+|0{0,2})91[\s-]*)?([6-9]\d{2}[\s-]?\d{3}[\s-]?\d{4})/.test(text);
-          const hasBiz = /\b(pvt|ltd|enterprises|traders|fashions|boutique|collections|studio|store|shop|co\.|garments|apparel|textiles)\b/i.test(text);
-          
-          if (hasPhone || hasBiz) break;
-        }
-      } catch (err) {
-        // Fallback for PDFs or files that can't be drawn to a canvas
-        const { data: { text } } = await worker.recognize(file);
-        bestText = text;
+      
+      if (!res.ok) throw new Error('API Error');
+      const { data } = await res.json();
+      
+      const newFields: Record<string, boolean> = {};
+      
+      if (data.shop_name || data.business_name) {
+        setValue('shop_name', data.shop_name || data.business_name, { shouldValidate: true });
+        newFields.shop_name = true;
+      }
+      if (data.mobile) {
+        setValue('mobile', data.mobile, { shouldValidate: true });
+        newFields.mobile = true;
+      }
+      if (data.city) {
+        setValue('city', data.city, { shouldValidate: true });
+        newFields.city = true;
+      }
+      if (data.name || data.contact_person) {
+        setValue('name', data.name || data.contact_person, { shouldValidate: true });
+        newFields.name = true;
       }
       
-      await worker.terminate();
-      const text = bestText;
-
-      // 1. Mobile Number (Extract exactly 10 digits ignoring spaces/country codes)
-      const phoneMatch = text.match(/(?:(?:\+|0{0,2})91[\s-]*)?([6-9]\d{2}[\s-]?\d{3}[\s-]?\d{4})/);
-      if (phoneMatch) {
-        const cleanPhone = phoneMatch[0].replace(/\D/g, '').slice(-10);
-        setValue('mobile', cleanPhone, { shouldValidate: true });
-      }
-
-      // 2. City (Use word boundaries to prevent partial matches like 'Sales' matching 'Salem')
-      const foundCity = INDIAN_CITIES.find((c) => new RegExp(`\\b${c}\\b`, 'i').test(text));
-      if (foundCity) {
-        setValue('city', foundCity, { shouldValidate: true });
-      }
-
-      // Pre-process lines (Remove short lines, emails, and phone numbers)
-      const lines = text.split('\n')
-        .map((l: string) => l.trim())
-        .filter((l: string) => l.length > 2 && !/[@_]/.test(l) && !/\d{5,}/.test(l));
-
-      // 3. Business Name (Check keywords, otherwise look for ALL CAPS or first line)
-      const bizKw = /\b(pvt|ltd|enterprises|traders|fashions|boutique|collections|studio|store|shop|co\.|garments|apparel|textiles|fabrics|creations|designers|silk|saree|wears|clothing|suits)\b/i;
-      let bizLine = lines.find((l: string) => bizKw.test(l));
-      
-      if (!bizLine) {
-        const capsLines = lines.filter((l: string) => l === l.toUpperCase() && l.length > 5 && !/\d/.test(l));
-        if (capsLines.length > 0) bizLine = capsLines[0];
-        else if (lines.length > 0) bizLine = lines[0];
-      }
-
-      if (bizLine) {
-        const cleanBiz = bizLine.replace(/[^a-zA-Z0-9\s&.-]/g, '').trim();
-        if (cleanBiz.length > 2) setValue('shop_name', cleanBiz.slice(0, 100), { shouldValidate: true });
-      }
-
-      // 4. Contact Name (Check title prefixes, otherwise look for exactly 2-3 pure alphabetical words)
-      const nameKw = /\b(mr\.|mrs\.|ms\.|prop\.|proprietor|auth\.|director|owner|sh\.)\b/i;
-      let nameLine = lines.find((l: string) => nameKw.test(l) && l !== bizLine);
-      
-      if (!nameLine) {
-        nameLine = lines.find((l: string) => {
-          if (l === bizLine) return false;
-          const words = l.split(/\s+/);
-          return (words.length === 2 || words.length === 3) && words.every(w => /^[A-Za-z]+$/.test(w));
-        });
-      }
-
-      if (nameLine) {
-        const cleanName = nameLine.replace(nameKw, '').replace(/[^a-zA-Z\s]/g, '').trim().replace(/\s+/g, ' ');
-        if (cleanName.length > 2) setValue('name', cleanName.slice(0, 60), { shouldValidate: true });
-      }
-
+      setOcrFields(newFields);
+      setOcrConfidence(data.confidence_score);
       setOcrStatus('done');
-      toast.success('Card scanned successfully!');
-    } catch {
+      
+      if (data.confidence_score === 'low') {
+        toast('Please verify the highlighted fields.', { icon: '⚠️' });
+      } else {
+        toast.success('Card scanned successfully!');
+      }
+    } catch (err) {
+      console.error(err);
       setOcrStatus('failed');
       toast.error('Could not read card automatically');
     }
@@ -397,7 +361,7 @@ export default function LeadForm() {
           )}
           <h3 className="upload-zone-title" style={{ fontSize: 14, marginBottom: 2 }}>📇 Upload Visiting Card (Optional)</h3>
           <p className="upload-zone-desc" style={{ fontSize: 12 }}>
-            Upload for Quick Auto Fill
+            {ocrStatus === 'scanning' ? 'Reading Visiting Card...' : 'Upload for Quick Auto Fill'}
           </p>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
             Supported: JPG, PNG, JPEG, PDF
@@ -431,7 +395,7 @@ export default function LeadForm() {
         <label htmlFor="shop_name" className="form-label">Business / Boutique Name</label>
         <input
           id="shop_name" type="text"
-          className={`form-input ${errors.shop_name ? 'error' : ''}`}
+          className={`form-input ${errors.shop_name ? 'error' : ''} ${ocrFields.shop_name ? 'highlighted-field' : ''}`}
           {...register('shop_name')}
         />
         {errors.shop_name && <p className="form-error">{errors.shop_name.message}</p>}
@@ -441,7 +405,7 @@ export default function LeadForm() {
         <label htmlFor="mobile" className="form-label">Mobile Number</label>
         <input
           id="mobile" type="tel" maxLength={10} inputMode="numeric"
-          className={`form-input ${errors.mobile ? 'error' : ''}`}
+          className={`form-input ${errors.mobile ? 'error' : ''} ${ocrFields.mobile ? 'highlighted-field' : ''}`}
           {...register('mobile')}
         />
         {errors.mobile && <p className="form-error">{errors.mobile.message}</p>}
@@ -458,6 +422,7 @@ export default function LeadForm() {
               value={field.value}
               onChange={field.onChange}
               error={errors.city?.message}
+              highlighted={ocrFields.city}
             />
           )}
         />
@@ -468,7 +433,7 @@ export default function LeadForm() {
         <label htmlFor="name" className="form-label">Your Name</label>
         <input
           id="name" type="text"
-          className={`form-input ${errors.name ? 'error' : ''}`}
+          className={`form-input ${errors.name ? 'error' : ''} ${ocrFields.name ? 'highlighted-field' : ''}`}
           {...register('name')}
         />
         {errors.name && <p className="form-error">{errors.name.message}</p>}
