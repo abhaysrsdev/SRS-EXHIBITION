@@ -42,9 +42,33 @@ export default function LandingPageFull() {
               }} 
             />
           </div>
-          <h1 className="page-heading">
-            <span className="text-gold-gradient">Customer Registration</span>
+          <h1 
+            className="page-heading"
+            style={{
+              fontFamily: "'Playfair Display', 'Cormorant Garamond', Georgia, serif",
+              fontWeight: 700,
+              fontSize: '32px',
+              letterSpacing: '-0.3px',
+              lineHeight: 1.2,
+              color: '#D4AF37',
+              textAlign: 'center',
+              marginBottom: '4px'
+            }}
+          >
+            Customer Registration
           </h1>
+          <p style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: '13px',
+            fontWeight: 500,
+            color: 'var(--text-muted)', /* Adjusted from white to ensure readability on ivory background */
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            marginBottom: '16px'
+          }}>
+            Exclusive Wholesale Exhibition Registration
+          </p>
         </header>
 
         {/* ==================================================
