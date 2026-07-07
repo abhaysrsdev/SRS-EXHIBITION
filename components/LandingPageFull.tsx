@@ -57,18 +57,6 @@ export default function LandingPageFull() {
           >
             Customer Registration
           </h1>
-          <p style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: '13px',
-            fontWeight: 500,
-            color: 'var(--text-muted)', /* Adjusted from white to ensure readability on ivory background */
-            letterSpacing: '1px',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            marginBottom: '16px'
-          }}>
-            Exclusive Wholesale Exhibition Registration
-          </p>
         </header>
 
         {/* ==================================================
