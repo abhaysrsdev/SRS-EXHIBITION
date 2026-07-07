@@ -27,7 +27,7 @@ export default function LandingPageFull() {
             alt="Shree Radha Studio Logo" 
             style={{ 
               display: 'block', 
-              margin: '0 auto 8px auto', 
+              margin: '0 auto -12px auto', 
               width: '180px', 
               height: 'auto',
               objectFit: 'contain',
