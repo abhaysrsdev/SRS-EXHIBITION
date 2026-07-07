@@ -8,7 +8,7 @@ import ContactModal from '@/components/ContactModal';
 function SuccessInner() {
   const params = useSearchParams();
   const name = params.get('name') || 'Customer';
-  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactType, setContactType] = useState<'shree' | 'radhika' | null>(null);
 
   const waMessage = encodeURIComponent(
     `Jai Shree Shyam 🙏\n\nI have successfully registered through the Shree Radha Studio Exhibition Registration page.\n\nPlease share your latest wholesale catalogue, exhibition details and new collection.`
@@ -49,15 +49,15 @@ function SuccessInner() {
             </div>
             
             <button
-              onClick={(e) => { e.preventDefault(); setShowContactModal(true); }}
+              onClick={(e) => { e.preventDefault(); setContactType('shree'); }}
               className="btn-outline"
             >
               SAVE SHREE RADHA STUDIO CONTACT
             </button>
             
             <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
-              <p>📍 Business Address: [Placeholder Address]</p>
-              <a href="#" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
+              <p>📍 4337/38, Bhairon Wali Gali, Jogiwada, Nai Sarak, Chandni Chowk, New Delhi, Delhi 110006</p>
+              <a href="https://maps.google.com/?q=4337/38,+Bhairon+Wali+Gali,+Jogiwada,+Nai+Sarak,+Chandni+Chowk,+New+Delhi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
             </div>
           </div>
 
@@ -69,15 +69,15 @@ function SuccessInner() {
             </div>
             
             <button
-              onClick={(e) => { e.preventDefault(); setShowContactModal(true); }}
+              onClick={(e) => { e.preventDefault(); setContactType('radhika'); }}
               className="btn-outline"
             >
               SAVE RADHIKA COLLECTION CONTACT
             </button>
             
             <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
-              <p>📍 Business Address: [Placeholder Address]</p>
-              <a href="#" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
+              <p>📍 4337/38, Bhairon Wali Gali, Jogiwada, Nai Sarak, Chandni Chowk, New Delhi, Delhi 110006</p>
+              <a href="https://maps.google.com/?q=4337/38,+Bhairon+Wali+Gali,+Jogiwada,+Nai+Sarak,+Chandni+Chowk,+New+Delhi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
             </div>
           </div>
 
@@ -92,7 +92,7 @@ function SuccessInner() {
           </a>
         </div>
 
-        <ContactModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
+        <ContactModal type={contactType} onClose={() => setContactType(null)} />
       </div>
     </main>
   );
