@@ -56,8 +56,8 @@ function SuccessInner() {
             </button>
             
             <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
-              <p>📍 4337/38, Bhairon Wali Gali, Jogiwada, Nai Sarak, Chandni Chowk, New Delhi, Delhi 110006</p>
-              <a href="https://maps.google.com/?q=4337/38,+Bhairon+Wali+Gali,+Jogiwada,+Nai+Sarak,+Chandni+Chowk,+New+Delhi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
+              <p>📍 New Post Office, 9/1112 Matke Wali Gali, Opposite Gandhi Nagar, Block 9, Delhi 110031</p>
+              <a href="https://maps.google.com/?q=Gandhi+Nagar,+New+Delhi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>View on Google Maps</a>
             </div>
           </div>
 
