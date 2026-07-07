@@ -168,7 +168,7 @@ function CityDropdown({
 
 import { downloadVCF } from '@/lib/vcf';
 
-export default function LeadForm() {
+export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, city: string) => void } = {}) {
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
