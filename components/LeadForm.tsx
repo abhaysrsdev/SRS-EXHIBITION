@@ -241,7 +241,10 @@ export default function LeadForm() {
         body: JSON.stringify({ imageBase64: base64Image, mimeType })
       });
       
-      if (!res.ok) throw new Error('API Error');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `API Error: ${res.status}`);
+      }
       const { data } = await res.json();
       
       const newFields: Record<string, boolean> = {};
@@ -272,10 +275,10 @@ export default function LeadForm() {
       } else {
         toast.success('Card scanned successfully!');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setOcrStatus('failed');
-      toast.error('Could not read card automatically');
+      toast.error(err.message || 'Could not read card automatically');
     }
   }, [setValue]);
 
