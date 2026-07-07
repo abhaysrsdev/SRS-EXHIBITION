@@ -7,7 +7,7 @@ import ContactModal from '@/components/ContactModal';
 
 export default function LandingPageFull() {
   const [showGST, setShowGST] = useState(false);
-  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactType, setContactType] = useState<'shree' | 'radhika' | null>(null);
 
   const waMessage = encodeURIComponent(
     `Jai Shree Shyam 🙏\n\nI have successfully registered through the Shree Radha Studio Exhibition Registration page.\n\nPlease share your latest wholesale catalogue and exhibition details.`
@@ -79,7 +79,7 @@ export default function LandingPageFull() {
             <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Mobile: 9811798414</div>
           </div>
           
-          <button onClick={(e) => { e.preventDefault(); setShowContactModal(true); }} className="btn-outline" style={{ padding: '6px 12px', fontSize: '11px' }}>
+          <button onClick={(e) => { e.preventDefault(); setContactType('shree'); }} className="btn-outline" style={{ padding: '6px 12px', fontSize: '11px' }}>
             SAVE CONTACT
           </button>
           
@@ -97,7 +97,7 @@ export default function LandingPageFull() {
             <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Mobile: 9811798414</div>
           </div>
           
-          <button onClick={(e) => { e.preventDefault(); setShowContactModal(true); }} className="btn-outline" style={{ padding: '6px 12px', fontSize: '11px' }}>
+          <button onClick={(e) => { e.preventDefault(); setContactType('radhika'); }} className="btn-outline" style={{ padding: '6px 12px', fontSize: '11px' }}>
             SAVE CONTACT
           </button>
           
@@ -125,7 +125,7 @@ export default function LandingPageFull() {
 
         </div>
 
-        <ContactModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
+        <ContactModal type={contactType} onClose={() => setContactType(null)} />
       </div>
     </main>
   );

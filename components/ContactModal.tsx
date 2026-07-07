@@ -1,8 +1,10 @@
 import React from 'react';
 import { downloadVCF } from '@/lib/vcf';
 
-export default function ContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  if (!isOpen) return null;
+export default function ContactModal({ type, onClose }: { type: 'shree' | 'radhika' | null; onClose: () => void }) {
+  if (!type) return null;
+
+  const isRadhika = type === 'radhika';
 
   return (
     <div style={{
@@ -27,17 +29,20 @@ export default function ContactModal({ isOpen, onClose }: { isOpen: boolean; onC
         </h3>
         
         <div style={{ color: 'var(--text-primary)', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px', background: 'var(--black-deep)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-gold)' }}>
-          <p><strong>Company:</strong> Shree Radha Studio</p>
+          <p><strong>Company:</strong> {isRadhika ? 'Radhika Collection Pvt Ltd' : 'Shree Radha Studio'}</p>
           <p><strong>Sales & Orders:</strong> 9811798414, 9811798826</p>
           <p><strong>Accounts:</strong> 9811798243, 9811798802</p>
           <p><strong>WhatsApp:</strong> 9811798414</p>
           <p><strong>Email:</strong> shreeradhastudio@gmail.com</p>
-          <p><strong>Address:</strong> New Post Office, 9/1112 Matke Wali Gali, Opposite Gandhi Nagar, Block 9, Delhi 110031</p>
+          <p><strong>Address:</strong> {isRadhika 
+            ? '4337/38, Bhairon Wali Gali, Jogiwada, Nai Sarak, Chandni Chowk, New Delhi, Delhi 110006' 
+            : 'New Post Office, 9/1112 Matke Wali Gali, Opposite Gandhi Nagar, Block 9, Delhi 110031'}
+          </p>
         </div>
 
         <button 
           onClick={() => {
-            downloadVCF('Shree Radha Studio', '9811798414');
+            downloadVCF(isRadhika ? 'Radhika Collection' : 'Shree Radha Studio', '9811798414');
             onClose();
           }} 
           className="btn-primary" 
