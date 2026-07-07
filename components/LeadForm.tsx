@@ -33,6 +33,7 @@ const schema = z.object({
   mobile:    z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
   shop_name: z.string().min(2, 'Business / Boutique name is required').max(200),
   city:      z.string().min(2, 'City is required').max(100),
+  gst_number: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -265,6 +266,10 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
         setValue('name', data.name || data.contact_person, { shouldValidate: true });
         newFields.name = true;
       }
+      if (data.gst_number) {
+        setValue('gst_number', data.gst_number, { shouldValidate: true });
+        newFields.gst_number = true;
+      }
       
       setOcrFields(newFields);
       setOcrConfidence(data.confidence_score);
@@ -320,6 +325,7 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
           product_code:   null,
           sales_order_code: null,
           remarks:        null,
+          gst_number:     data.gst_number || null,
           uploaded_files: uploadedFiles.length > 0 ? uploadedFiles : null,
         });
       } catch (err) {
@@ -337,6 +343,7 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
           mobile: data.mobile,
           city: data.city,
           shop_name: data.shop_name,
+          gst_number: data.gst_number || '',
           file_url: uploadedFiles.length > 0 ? uploadedFiles[0].url : '',
           lead_source: 'Website Registration',
           lead_status: 'New Lead'
@@ -462,6 +469,17 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
           {...register('name')}
         />
         {errors.name && <p className="form-error">{errors.name.message}</p>}
+      </div>
+
+      <div className="field-group">
+        <label htmlFor="gst_number" className="form-label">GST Number (Optional)</label>
+        <input
+          id="gst_number" type="text"
+          className={`form-input ${errors.gst_number ? 'error' : ''} ${ocrFields.gst_number ? 'highlighted-field' : ''}`}
+          {...register('gst_number')}
+          style={{ textTransform: 'uppercase' }}
+        />
+        {errors.gst_number && <p className="form-error">{errors.gst_number.message}</p>}
       </div>
 
       <button

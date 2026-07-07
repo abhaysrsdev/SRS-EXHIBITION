@@ -11,6 +11,7 @@ export interface ExhibitionLead {
   product_code: string | null;
   sales_order_code: string | null;
   remarks: string | null;
+  gst_number: string | null;
   uploaded_files: UploadedFile[] | null;
   created_at: string;
 }
@@ -33,6 +34,7 @@ export interface LeadFormData {
   product_code?: string;
   sales_order_code?: string;
   remarks?: string;
+  gst_number?: string;
 }
 
 export interface FileWithPreview extends File {

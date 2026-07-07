@@ -47,6 +47,7 @@ export async function POST(request: Request) {
             'Contact Person Name',
             'Mobile Number',
             'City',
+            'GST Number',
             'Visiting Card File URL',
             'Lead Source',
             'Lead Status'
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
           'Contact Person Name': data.name || '',
           'Mobile Number': data.mobile,
           'City': data.city || '',
+          'GST Number': data.gst_number || '',
           'Visiting Card File URL': data.file_url || '',
           'Lead Source': data.lead_source || 'Website Registration',
           'Lead Status': data.lead_status || 'New Lead'
