@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { imageBase64 } = body;
+    const { imageBase64, mimeType = 'image/jpeg' } = body;
 
     if (!imageBase64) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: [
         {
           role: 'user',
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
             { text: prompt },
             {
               inlineData: {
-                mimeType: 'image/jpeg',
+                mimeType: mimeType,
                 data: imageBase64
               }
             }

@@ -193,34 +193,52 @@ export default function LeadForm() {
     setOcrFields({});
     setOcrConfidence(null);
     try {
-      // Fast Client-side Compression
-      const img = await createImageBitmap(file);
-      const canvas = document.createElement('canvas');
-      const MAX_SIZE = 1500;
-      let width = img.width;
-      let height = img.height;
-      if (width > height && width > MAX_SIZE) {
-        height *= MAX_SIZE / width;
-        width = MAX_SIZE;
-      } else if (height > MAX_SIZE) {
-        width *= MAX_SIZE / height;
-        height = MAX_SIZE;
+      let base64Image = '';
+      
+      try {
+        // Fast Client-side Compression
+        const img = await createImageBitmap(file);
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 1500;
+        let width = img.width;
+        let height = img.height;
+        if (width > height && width > MAX_SIZE) {
+          height *= MAX_SIZE / width;
+          width = MAX_SIZE;
+        } else if (height > MAX_SIZE) {
+          width *= MAX_SIZE / height;
+          height = MAX_SIZE;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas not supported');
+        
+        ctx.filter = 'grayscale(100%) contrast(1.2)';
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        base64Image = dataUrl.split(',')[1];
+      } catch (imgErr) {
+        // Fallback: If it's a PDF or createImageBitmap fails, just read it directly
+        console.warn('Canvas compression failed, sending raw file', imgErr);
+        base64Image = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]);
+          };
+          reader.onerror = () => reject(new Error('File reading failed'));
+          reader.readAsDataURL(file);
+        });
       }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas not supported');
       
-      // Apply grayscale and contrast filter for better OCR (optional but helps)
-      ctx.filter = 'grayscale(100%) contrast(1.2)';
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      const mimeType = file.type || 'image/jpeg';
       
       const res = await fetch('/api/ocr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64Image })
+        body: JSON.stringify({ imageBase64: base64Image, mimeType })
       });
       
       if (!res.ok) throw new Error('API Error');
