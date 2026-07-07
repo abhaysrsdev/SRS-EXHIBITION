@@ -80,7 +80,12 @@ export async function POST(req: Request) {
        throw new Error('Empty response from AI');
     }
 
-    const data = JSON.parse(textResult);
+    // Clean potential markdown formatting
+    let cleanedText = textResult.trim();
+    if (cleanedText.startsWith('```')) {
+      cleanedText = cleanedText.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+    }
+    const data = JSON.parse(cleanedText);
 
     return NextResponse.json({ data }, { status: 200 });
 
