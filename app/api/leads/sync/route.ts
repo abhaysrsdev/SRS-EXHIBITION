@@ -54,11 +54,6 @@ export async function POST(request: Request) {
           ]);
         }
 
-        const rows = await sheet.getRows();
-        
-        // Check for existing mobile number
-        const existingRow = rows.find(row => row.get('Mobile Number') === data.mobile);
-
         const hasTimestamp2 = sheet.headerValues.includes('Timestamp2');
         const rowData = {
           [hasTimestamp2 ? 'Timestamp2' : 'Timestamp']: data.timestamp || new Date().toLocaleString(),
@@ -72,14 +67,8 @@ export async function POST(request: Request) {
           'Lead Status': data.lead_status || 'New Lead'
         };
 
-        if (existingRow) {
-          // Update the existing row
-          existingRow.assign(rowData);
-          await existingRow.save();
-        } else {
-          // Append a new row
-          await sheet.addRow(rowData);
-        }
+        // Always append a new row, exactly mirroring the database insert behavior
+        await sheet.addRow(rowData);
 
         return NextResponse.json({ success: true });
         
