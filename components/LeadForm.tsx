@@ -314,27 +314,8 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
         }
       }
 
-      try {
-        await insertLead({
-          name:           data.name,
-          mobile:         data.mobile,
-          city:           data.city,
-          state:          null,
-          shop_name:      data.shop_name,
-          business_type:  null,
-          product_code:   null,
-          sales_order_code: null,
-          remarks:        null,
-          gst_number:     data.gst_number || null,
-          uploaded_files: uploadedFiles.length > 0 ? uploadedFiles : null,
-        });
-      } catch (err) {
-        console.error('Supabase DB insert failed:', err);
-        // We will continue to save to Google Sheets even if Supabase fails
-      }
-
-      // Trigger Google Sheets sync in the background
-      await fetch('/api/leads/sync', {
+      // Trigger combined Supabase + Google Sheets sync
+      const res = await fetch('/api/leads/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -345,10 +326,15 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
           shop_name: data.shop_name,
           gst_number: data.gst_number || '',
           file_url: uploadedFiles.length > 0 ? uploadedFiles[0].url : '',
+          uploaded_files: uploadedFiles.length > 0 ? uploadedFiles : null,
           lead_source: 'Website Registration',
           lead_status: 'New Lead'
         })
       });
+
+      if (!res.ok) {
+        throw new Error('Sync failed with status ' + res.status);
+      }
 
       toast.success('Registration successful!', { id: toastId });
       setIsRegistered(true);

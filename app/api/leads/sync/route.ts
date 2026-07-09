@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
+import { insertLead } from '@/lib/supabase';
 
 // The ID from the URL the user provided
 const SPREADSHEET_ID = '18nfrZNdy6rUtjIU7TyzMdnI5MWqkp3oaJH8RT-6M3pE';
@@ -8,6 +9,30 @@ const SPREADSHEET_ID = '18nfrZNdy6rUtjIU7TyzMdnI5MWqkp3oaJH8RT-6M3pE';
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+
+    // 1. First, insert into Supabase Database
+    try {
+      await insertLead({
+        name:           data.name,
+        mobile:         data.mobile,
+        city:           data.city,
+        state:          null,
+        shop_name:      data.shop_name,
+        business_type:  null,
+        product_code:   null,
+        sales_order_code: null,
+        remarks:        null,
+        gst_number:     data.gst_number || null,
+        uploaded_files: data.uploaded_files || null,
+      });
+    } catch (dbError: any) {
+      console.error('Supabase DB insert failed inside API:', dbError);
+      // If database fails, we might want to return an error, but for now we continue
+      // to Google Sheets so at least one system has the data, or we can fail.
+      // Let's fail the whole request so the user retries.
+      return NextResponse.json({ success: false, error: 'Database insert failed' }, { status: 500 });
+    }
+
     
     // Ensure credentials exist
     const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
