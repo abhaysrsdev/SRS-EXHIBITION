@@ -333,7 +333,8 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
       });
 
       if (!res.ok) {
-        throw new Error('Sync failed with status ' + res.status);
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || errData.error || 'Sync failed with status ' + res.status);
       }
 
       toast.success('Registration successful!', { id: toastId });
@@ -343,9 +344,9 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
       if (onSuccess) {
         onSuccess(data.name, data.city);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Something went wrong. Please try again.', { id: toastId });
+      toast.error(err.message || 'Something went wrong. Please try again.', { id: toastId });
       setIsSubmitting(false);
     }
   };
