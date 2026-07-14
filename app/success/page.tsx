@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { downloadVCF } from '@/lib/vcf';
 import ContactModal from '@/components/ContactModal';
+import WhatsAppButton from '@/components/WhatsAppButton';
 
 function SuccessInner() {
   const params = useSearchParams();
@@ -21,6 +22,7 @@ function SuccessInner() {
 
   return (
     <main className="page-shell" style={{ padding: '32px 16px' }}>
+      <WhatsAppButton />
       <div className="card-wrap" style={{ position: 'relative', zIndex: 2 }}>
 
         {/* ── Welcome Message ── */}
@@ -86,14 +88,7 @@ function SuccessInner() {
 
         </div>
 
-        <div className="gold-divider-full anim-3" />
 
-        {/* ── WhatsApp Section ── */}
-        <div className="anim-4">
-          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn-whatsapp" style={{ padding: '20px 24px', fontSize: 16 }}>
-            MESSAGE US ON WHATSAPP
-          </a>
-        </div>
 
         <ContactModal type={contactType} onClose={() => setContactType(null)} />
       </div>

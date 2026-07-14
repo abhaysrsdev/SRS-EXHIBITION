@@ -356,27 +356,28 @@ export default function AdminLeadsClient() {
                 >
                   Uploaded Files ({selectedLead.uploaded_files.length})
                 </p>
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {(selectedLead.uploaded_files as UploadedFile[]).map((f, i) => (
-                    <a
-                      key={i}
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-lg px-4 py-3 transition-colors"
-                      style={{
-                        background: 'rgba(201,169,110,0.07)',
-                        border: '1px solid rgba(201,169,110,0.15)',
-                        textDecoration: 'none',
-                        color: 'var(--gold)',
-                      }}
-                    >
-                      <ExternalLink size={14} />
-                      <span className="text-sm flex-1 truncate">{f.name}</span>
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        {f.category.replace(/_/g, ' ')}
-                      </span>
-                    </a>
+                    <div key={i} className="flex flex-col gap-2 rounded-lg p-3" style={{ background: 'rgba(201,169,110,0.07)', border: '1px solid rgba(201,169,110,0.15)' }}>
+                      <p className="text-xs font-semibold text-center" style={{ color: 'var(--gold)' }}>
+                        {f.category.replace(/_/g, ' ').toUpperCase()}
+                      </p>
+                      <div className="w-full h-32 rounded flex items-center justify-center overflow-hidden" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                         {f.url.toLowerCase().endsWith('.pdf') ? (
+                           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>PDF Document</div>
+                         ) : (
+                           <img src={f.url} alt={f.name} className="w-full h-full object-contain" />
+                         )}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center py-2 text-xs rounded bg-white text-black font-semibold transition-transform hover:scale-105" style={{ textDecoration: 'none' }}>
+                          Open
+                        </a>
+                        <a href={f.url} download={f.name} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center py-2 text-xs rounded font-semibold transition-transform hover:scale-105" style={{ background: 'var(--gold)', color: 'white', textDecoration: 'none' }}>
+                          Download
+                        </a>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

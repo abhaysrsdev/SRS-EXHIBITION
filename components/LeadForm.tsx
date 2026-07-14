@@ -1,11 +1,11 @@
-     'use client';
+'use client';
 
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Loader2, Upload, MapPin, ScanLine, Sparkles, X } from 'lucide-react';
+import { Loader2, Upload, MapPin, X, Image as ImageIcon } from 'lucide-react';
 import { z } from 'zod';
 import { uploadFile, insertLead } from '@/lib/supabase';
 import { generateLeadId, validateImageFile } from '@/lib/utils';
@@ -44,12 +44,10 @@ function CityDropdown({
   value,
   onChange,
   error,
-  highlighted,
 }: {
   value: string;
   onChange: (v: string) => void;
   error?: string;
-  highlighted?: boolean;
 }) {
   const [query, setQuery] = useState(value || '');
   const [open, setOpen] = useState(false);
@@ -113,7 +111,7 @@ function CityDropdown({
           autoComplete="off"
           placeholder="Select City"
           value={query}
-          className={`form-input ${error ? 'error' : ''} ${highlighted ? 'highlighted-field' : ''}`}
+          className={`form-input ${error ? 'error' : ''}`}
           style={{ paddingRight: 40 }}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -167,134 +165,29 @@ function CityDropdown({
 
 // ─── Main Form ────────────────────────────────────────────────────────────────
 
-import { downloadVCF } from '@/lib/vcf';
-
 export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, city: string) => void } = {}) {
-  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+  const [frontCard, setFrontCard] = useState<File | null>(null);
+  const [backCard, setBackCard] = useState<File | null>(null);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [ocrStatus, setOcrStatus] = useState<'idle' | 'scanning' | 'done' | 'failed'>('idle');
-  const [ocrFields, setOcrFields] = useState<Record<string, boolean>>({});
-  const [ocrConfidence, setOcrConfidence] = useState<'high' | 'low' | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
     handleSubmit,
-    setValue,
     control,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-  // ── OCR ───────────────────────────────────────────────────────────────────
-  const runOCR = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
-    setOcrStatus('scanning');
-    setOcrFields({});
-    setOcrConfidence(null);
-    try {
-      let base64Image = '';
-      
-      try {
-        // Fast Client-side Compression
-        const img = await createImageBitmap(file);
-        const canvas = document.createElement('canvas');
-        const MAX_SIZE = 1500;
-        let width = img.width;
-        let height = img.height;
-        if (width > height && width > MAX_SIZE) {
-          height *= MAX_SIZE / width;
-          width = MAX_SIZE;
-        } else if (height > MAX_SIZE) {
-          width *= MAX_SIZE / height;
-          height = MAX_SIZE;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('Canvas not supported');
-        
-        ctx.filter = 'grayscale(100%) contrast(1.2)';
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        base64Image = dataUrl.split(',')[1];
-      } catch (imgErr) {
-        // Fallback: If it's a PDF or createImageBitmap fails, just read it directly
-        console.warn('Canvas compression failed, sending raw file', imgErr);
-        base64Image = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            resolve(result.split(',')[1]);
-          };
-          reader.onerror = () => reject(new Error('File reading failed'));
-          reader.readAsDataURL(file);
-        });
-      }
-      
-      const mimeType = file.type || 'image/jpeg';
-      
-      const res = await fetch('/api/ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64Image, mimeType })
-      });
-      
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `API Error: ${res.status}`);
-      }
-      const { data } = await res.json();
-      
-      const newFields: Record<string, boolean> = {};
-      
-      if (data.shop_name || data.business_name) {
-        setValue('shop_name', data.shop_name || data.business_name, { shouldValidate: true });
-        newFields.shop_name = true;
-      }
-      if (data.mobile) {
-        setValue('mobile', data.mobile, { shouldValidate: true });
-        newFields.mobile = true;
-      }
-      if (data.city) {
-        setValue('city', data.city, { shouldValidate: true });
-        newFields.city = true;
-      }
-      if (data.name || data.contact_person) {
-        setValue('name', data.name || data.contact_person, { shouldValidate: true });
-        newFields.name = true;
-      }
-      if (data.gst_number) {
-        setValue('gst_number', data.gst_number, { shouldValidate: true });
-        newFields.gst_number = true;
-      }
-      
-      setOcrFields(newFields);
-      setOcrConfidence(data.confidence_score);
-      setOcrStatus('done');
-      
-      if (data.confidence_score === 'low') {
-        toast('Please verify the highlighted fields.', { icon: '⚠️' });
-      } else {
-        toast.success('Card scanned successfully!');
-      }
-    } catch (err: any) {
-      console.error(err);
-      setOcrStatus('failed');
-      toast.error(err.message || 'Could not read card automatically');
-    }
-  }, [setValue]);
-
-  const handleFile = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const file = files[0];
+  const validateAndSetFile = (file: File, setter: React.Dispatch<React.SetStateAction<File | null>>) => {
     const err = validateImageFile(file);
     if (err) { toast.error(err); return; }
-    
-    setFileToUpload(file);
-    runOCR(file);
+    // 5MB limit check
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5 MB');
+      return;
+    }
+    setter(file);
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -303,14 +196,27 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
     const toastId = toast.loading('Registering details…');
     try {
       let uploadedFiles: UploadedFile[] = [];
-      if (fileToUpload) {
+      const leadId = generateLeadId();
+
+      if (frontCard) {
         try {
-          const leadId = generateLeadId();
-          const uf = await uploadFile(fileToUpload, 'visiting_card', leadId);
+          const uf = await uploadFile(frontCard, 'visiting_card', leadId + '_front');
+          uf.category = 'front_card'; // Force category to match new enum
           uploadedFiles.push(uf);
         } catch (err) {
-          console.error('File upload failed:', err);
-          toast.error('File upload failed, but saving details...', { id: toastId });
+          console.error('Front file upload failed:', err);
+          toast.error('Front file upload failed, but saving details...', { id: toastId });
+        }
+      }
+
+      if (backCard) {
+        try {
+          const uf = await uploadFile(backCard, 'visiting_card', leadId + '_back');
+          uf.category = 'back_card'; // Force category to match new enum
+          uploadedFiles.push(uf);
+        } catch (err) {
+          console.error('Back file upload failed:', err);
+          toast.error('Back file upload failed, but saving details...', { id: toastId });
         }
       }
 
@@ -325,7 +231,6 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
           city: data.city,
           shop_name: data.shop_name,
           gst_number: data.gst_number || '',
-          file_url: uploadedFiles.length > 0 ? uploadedFiles[0].url : '',
           uploaded_files: uploadedFiles.length > 0 ? uploadedFiles : null,
           lead_source: 'Website Registration',
           lead_status: 'New Lead'
@@ -363,48 +268,37 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="lead-form" noValidate>
       
-      {/* ── VISITING CARD UPLOAD ── */}
+      {/* ── VISITING CARD UPLOAD SECTION ── */}
       <div className="field-group" style={{ marginBottom: 8 }}>
-        <div
-          className={`upload-zone ${isDragOver ? 'dragover' : ''}`}
-          style={{ padding: '12px 8px' }}
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-          onDragLeave={() => setIsDragOver(false)}
-          onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFile(e.dataTransfer.files); }}
-        >
-          {ocrStatus === 'scanning' ? (
-            <Loader2 size={24} style={{ margin: '0 auto 8px', color: 'var(--gold)', animation: 'spin 1s linear infinite' }} />
-          ) : (
-            <Upload size={24} style={{ margin: '0 auto 8px', color: 'var(--gold)' }} />
-          )}
-          <h3 className="upload-zone-title" style={{ fontSize: 14, marginBottom: 2 }}>📇 Upload Visiting Card (Optional)</h3>
-          <p className="upload-zone-desc" style={{ fontSize: 12 }}>
-            {ocrStatus === 'scanning' ? 'Reading Visiting Card...' : 'Upload for Quick Auto Fill'}
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 18, color: 'var(--gold-dark)', fontWeight: 600 }}>📇 Upload Visiting Card</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
+            Please upload clear photos of your visiting card.<br />
+            These images will be securely stored for future reference.
           </p>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-            Supported: JPG, PNG, JPEG, PDF
-          </p>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,application/pdf"
-            className="hidden"
-            onChange={(e) => handleFile(e.target.files)}
-          />
         </div>
-        
-        {fileToUpload && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(201,165,90,0.1)', padding: '10px 14px', borderRadius: 8, marginTop: 12, border: '1px solid rgba(201,165,90,0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {ocrStatus === 'done' ? <Sparkles size={16} color="var(--gold)" /> : <ScanLine size={16} color="var(--gold)" />}
-              <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{fileToUpload.name}</span>
-            </div>
-            <button type="button" onClick={(e) => { e.stopPropagation(); setFileToUpload(null); setOcrStatus('idle'); }} style={{ background: 'transparent', border: 'none', color: 'var(--error-red)', cursor: 'pointer' }}>
-              <X size={16} />
-            </button>
-          </div>
-        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+          
+          {/* Front Card Upload */}
+          <UploadCard 
+            title="📷 FRONT SIDE"
+            buttonText="Upload Front Side"
+            file={frontCard}
+            onFileSelect={(f) => validateAndSetFile(f, setFrontCard)}
+            onRemove={() => setFrontCard(null)}
+          />
+
+          {/* Back Card Upload */}
+          <UploadCard 
+            title="📷 BACK SIDE (OPTIONAL)"
+            buttonText="Upload Back Side"
+            file={backCard}
+            onFileSelect={(f) => validateAndSetFile(f, setBackCard)}
+            onRemove={() => setBackCard(null)}
+          />
+          
+        </div>
       </div>
 
       <div className="gold-divider-full" style={{ margin: '8px 0 8px 0' }} />
@@ -414,7 +308,7 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
         <label htmlFor="shop_name" className="form-label">Business / Boutique Name</label>
         <input
           id="shop_name" type="text"
-          className={`form-input ${errors.shop_name ? 'error' : ''} ${ocrFields.shop_name ? 'highlighted-field' : ''}`}
+          className={`form-input ${errors.shop_name ? 'error' : ''}`}
           {...register('shop_name')}
         />
         {errors.shop_name && <p className="form-error">{errors.shop_name.message}</p>}
@@ -424,7 +318,7 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
         <label htmlFor="mobile" className="form-label">Mobile Number</label>
         <input
           id="mobile" type="tel" maxLength={10} inputMode="numeric"
-          className={`form-input ${errors.mobile ? 'error' : ''} ${ocrFields.mobile ? 'highlighted-field' : ''}`}
+          className={`form-input ${errors.mobile ? 'error' : ''}`}
           {...register('mobile')}
         />
         {errors.mobile && <p className="form-error">{errors.mobile.message}</p>}
@@ -441,7 +335,6 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
               value={field.value}
               onChange={field.onChange}
               error={errors.city?.message}
-              highlighted={ocrFields.city}
             />
           )}
         />
@@ -452,7 +345,7 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
         <label htmlFor="name" className="form-label">Your Name</label>
         <input
           id="name" type="text"
-          className={`form-input ${errors.name ? 'error' : ''} ${ocrFields.name ? 'highlighted-field' : ''}`}
+          className={`form-input ${errors.name ? 'error' : ''}`}
           {...register('name')}
         />
         {errors.name && <p className="form-error">{errors.name.message}</p>}
@@ -462,7 +355,7 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
         <label htmlFor="gst_number" className="form-label">GST Number (Optional)</label>
         <input
           id="gst_number" type="text"
-          className={`form-input ${errors.gst_number ? 'error' : ''} ${ocrFields.gst_number ? 'highlighted-field' : ''}`}
+          className={`form-input ${errors.gst_number ? 'error' : ''}`}
           {...register('gst_number')}
           style={{ textTransform: 'uppercase' }}
         />
@@ -483,5 +376,95 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
       </button>
 
     </form>
+  );
+}
+
+// ─── Upload Card Component ────────────────────────────────────────────────────
+
+function UploadCard({
+  title,
+  buttonText,
+  file,
+  onFileSelect,
+  onRemove
+}: {
+  title: string;
+  buttonText: string;
+  file: File | null;
+  onFileSelect: (f: File) => void;
+  onRemove: () => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  
+  // Create object URL for preview if file is an image
+  const [preview, setPreview] = useState<string | null>(null);
+  useEffect(() => {
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setPreview(null);
+  }, [file]);
+
+  return (
+    <div style={{ background: '#FAF7F2', borderRadius: '12px', border: '1px solid var(--border-gold)', padding: '16px' }}>
+      <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', marginBottom: 12 }}>{title}</div>
+      
+      {!file ? (
+        <div
+          className={`upload-zone ${isDragOver ? 'dragover' : ''}`}
+          style={{ padding: '20px 12px', background: '#FFF' }}
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setIsDragOver(false); if (e.dataTransfer.files?.length) onFileSelect(e.dataTransfer.files[0]); }}
+        >
+          <Upload size={20} style={{ margin: '0 auto 8px', color: 'var(--gold)' }} />
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--gold-dark)' }}>{buttonText}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>JPG, JPEG, PNG, PDF (Max 5MB)</div>
+        </div>
+      ) : (
+        <div style={{ background: '#FFF', borderRadius: '8px', border: '1px solid var(--border-gold)', padding: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 6, background: '#F5F5F5', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {preview ? (
+                <img src={preview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <ImageIcon size={20} color="var(--text-muted)" />
+              )}
+            </div>
+            
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {file.name}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--success-green)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                ✅ Uploaded
+              </div>
+            </div>
+            
+            <button type="button" onClick={onRemove} style={{ padding: 4, background: 'transparent', border: 'none', color: 'var(--error-red)', cursor: 'pointer', flexShrink: 0 }} aria-label="Remove image">
+              <X size={18} />
+            </button>
+          </div>
+          
+          <div style={{ marginTop: 12, textAlign: 'center' }}>
+            <button type="button" onClick={() => fileInputRef.current?.click()} style={{ fontSize: 12, color: 'var(--gold-dark)', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+              Replace Image
+            </button>
+          </div>
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+        style={{ display: 'none' }}
+        onChange={(e) => { if (e.target.files?.length) onFileSelect(e.target.files[0]); }}
+      />
+    </div>
   );
 }

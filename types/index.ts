@@ -21,7 +21,7 @@ export interface UploadedFile {
   url: string;
   type: string;
   size: number;
-  category: 'visiting_card' | 'shop_photo' | 'gst_certificate' | 'other';
+  category: 'visiting_card' | 'front_card' | 'back_card' | 'shop_photo' | 'gst_certificate' | 'other';
 }
 
 export interface LeadFormData {

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import LeadForm from '@/components/LeadForm';
 import { downloadVCF } from '@/lib/vcf';
 import ContactModal from '@/components/ContactModal';
+import WhatsAppButton from '@/components/WhatsAppButton';
 
 export default function LandingPageFull() {
   const [showGST, setShowGST] = useState(false);
@@ -19,6 +20,7 @@ export default function LandingPageFull() {
 
   return (
     <main className="page-shell">
+      <WhatsAppButton />
       <div className="card-wrap" style={{ position: 'relative', zIndex: 2 }}>
         
         {/* ==================================================
@@ -116,17 +118,6 @@ export default function LandingPageFull() {
           <LeadForm onSuccess={(name, city) => setVisitorData({ name, city })} />
         </div>
 
-
-        {/* ==================================================
-            6. ALL OTHER INFORMATION (WhatsApp)
-            ================================================== */}
-        <div className="anim-5" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          
-          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn-whatsapp" style={{ padding: '20px 24px', fontSize: 16 }}>
-            MESSAGE US ON WHATSAPP
-          </a>
-
-        </div>
 
         <ContactModal type={contactType} onClose={() => setContactType(null)} />
       </div>

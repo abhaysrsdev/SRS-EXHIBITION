@@ -74,9 +74,21 @@ export async function POST(request: Request) {
             'City',
             'GST Number',
             'Visiting Card File URL',
+            'Front Image URL',
+            'Back Image URL',
+            'Upload Timestamp',
             'Lead Source',
             'Lead Status'
           ]);
+        }
+
+        let frontUrl = '';
+        let backUrl = '';
+        if (data.uploaded_files && Array.isArray(data.uploaded_files)) {
+          const front = data.uploaded_files.find((f: any) => f.category === 'front_card' || f.category === 'visiting_card');
+          if (front) frontUrl = front.url;
+          const back = data.uploaded_files.find((f: any) => f.category === 'back_card');
+          if (back) backUrl = back.url;
         }
 
         const hasTimestamp2 = sheet.headerValues.includes('Timestamp2');
@@ -87,7 +99,10 @@ export async function POST(request: Request) {
           'Mobile Number': data.mobile,
           'City': data.city || '',
           'GST Number': data.gst_number || '',
-          'Visiting Card File URL': data.file_url || '',
+          'Visiting Card File URL': frontUrl || '',
+          'Front Image URL': frontUrl,
+          'Back Image URL': backUrl,
+          'Upload Timestamp': data.timestamp || new Date().toLocaleString(),
           'Lead Source': data.lead_source || 'Website Registration',
           'Lead Status': data.lead_status || 'New Lead'
         };
