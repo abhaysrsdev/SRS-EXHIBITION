@@ -27,7 +27,14 @@ export function downloadCatalogue(): void {
   document.body.removeChild(link);
 }
 
-export function getWhatsAppUrl(): string {
+export function getWhatsAppUrl(firm: 'shree' | 'radhika' = 'shree'): string {
+  if (firm === 'radhika') {
+    const number = process.env.NEXT_PUBLIC_RADHIKA_WHATSAPP_NUMBER ?? '919811798281';
+    const message =
+      process.env.NEXT_PUBLIC_RADHIKA_WHATSAPP_MESSAGE ??
+      'Hi%20I%20visited%20your%20Radhika%20Collection%20exhibition';
+    return `https://wa.me/${number}?text=${message}`;
+  }
   const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919811798414';
   const message =
     process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ??
