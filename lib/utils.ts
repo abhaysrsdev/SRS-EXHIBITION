@@ -28,7 +28,7 @@ export function downloadCatalogue(): void {
 }
 
 export function getWhatsAppUrl(): string {
-  const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919876543210';
+  const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919811798414';
   const message =
     process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ??
     'Hi%20I%20visited%20your%20Shree%20Radha%20Studio%20exhibition';
