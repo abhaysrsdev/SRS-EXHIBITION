@@ -32,7 +32,7 @@ export function getWhatsAppUrl(firm: 'shree' | 'radhika' = 'shree'): string {
     const number = process.env.NEXT_PUBLIC_RADHIKA_WHATSAPP_NUMBER ?? '919811798281';
     const message =
       process.env.NEXT_PUBLIC_RADHIKA_WHATSAPP_MESSAGE ??
-      'Hi%20I%20visited%20your%20Radhika%20Collection%20exhibition';
+      'Hi%20I%20visited%20your%20Radhika%20Collection%20exhibition%20and%20I%20am%20interested%20in%20your%20collection';
     return `https://wa.me/${number}?text=${message}`;
   }
   const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919811798414';
