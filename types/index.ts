@@ -1,4 +1,5 @@
 export type BusinessType = 'Wholesaler' | 'Retailer' | 'Distributor' | 'Other';
+export type UploadDestination = 'SRS' | 'RADHIKA' | 'BOTH';
 
 export interface ExhibitionLead {
   id: string;
@@ -13,6 +14,7 @@ export interface ExhibitionLead {
   remarks: string | null;
   gst_number: string | null;
   uploaded_files: UploadedFile[] | null;
+  upload_destination: UploadDestination | null;
   created_at: string;
 }
 

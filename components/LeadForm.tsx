@@ -2,14 +2,20 @@
 
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Loader2, Upload, MapPin, X, Image as ImageIcon } from 'lucide-react';
 import { z } from 'zod';
-import { uploadFile, insertLead } from '@/lib/supabase';
+import { uploadFile } from '@/lib/supabase';
 import { generateLeadId, validateImageFile } from '@/lib/utils';
-import type { UploadedFile } from '@/types';
+import type { UploadedFile, UploadDestination } from '@/types';
+
+// ─── Destination Options ──────────────────────────────────────────────────────
+const DESTINATIONS: { value: UploadDestination; label: string }[] = [
+  { value: 'SRS',     label: 'Shree Radha Studio' },
+  { value: 'RADHIKA', label: 'Radhika Collection' },
+  { value: 'BOTH',    label: 'Both' },
+];
 
 // ─── Indian Cities ────────────────────────────────────────────────────────────
 
@@ -168,6 +174,7 @@ function CityDropdown({
 export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, city: string) => void } = {}) {
   const [frontCard, setFrontCard] = useState<File | null>(null);
   const [backCard, setBackCard] = useState<File | null>(null);
+  const [destination, setDestination] = useState<UploadDestination>('SRS');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
@@ -232,6 +239,7 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
           shop_name: data.shop_name,
           gst_number: data.gst_number || '',
           uploaded_files: uploadedFiles.length > 0 ? uploadedFiles : null,
+          upload_destination: destination,
           lead_source: 'Website Registration',
           lead_status: 'New Lead'
         })
@@ -267,6 +275,40 @@ export default function LeadForm({ onSuccess }: { onSuccess?: (name: string, cit
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="lead-form" noValidate>
+
+      {/* ── UPLOAD DESTINATION SELECTOR ── */}
+      <div className="field-group">
+        <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10 }}>
+          Select Upload Destination
+        </p>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+          {DESTINATIONS.map((d) => (
+            <button
+              key={d.value}
+              type="button"
+              id={`dest-${d.value}`}
+              onClick={() => setDestination(d.value)}
+              style={{
+                height: 38,
+                padding: '0 16px',
+                borderRadius: 50,
+                border: '1px solid var(--gold)',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                transition: 'all 0.2s ease',
+                background: destination === d.value ? 'var(--gold)' : '#FFFFFF',
+                color: destination === d.value ? '#1a1a1a' : 'var(--gold-dark)',
+                boxShadow: destination === d.value ? '0 4px 12px rgba(201,162,39,0.3)' : 'none',
+              }}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+      </div>
       
       {/* ── VISITING CARD UPLOAD SECTION ── */}
       <div className="field-group" style={{ marginBottom: 8 }}>

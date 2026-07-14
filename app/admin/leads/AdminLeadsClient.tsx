@@ -16,6 +16,7 @@ import {
 
 type SortKey = 'created_at' | 'name' | 'city' | 'shop_name';
 type SortDir = 'asc' | 'desc';
+type DestFilter = 'ALL' | 'SRS' | 'RADHIKA' | 'BOTH';
 
 export default function AdminLeadsClient() {
   const [leads, setLeads] = useState<ExhibitionLead[]>([]);
@@ -25,6 +26,7 @@ export default function AdminLeadsClient() {
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [selectedLead, setSelectedLead] = useState<ExhibitionLead | null>(null);
+  const [destFilter, setDestFilter] = useState<DestFilter>('ALL');
 
   const loadLeads = useCallback(async (searchQuery = '') => {
     setLoading(true);
@@ -51,12 +53,14 @@ export default function AdminLeadsClient() {
     return () => clearTimeout(t);
   }, [query, loadLeads]);
 
-  const sorted = [...leads].sort((a, b) => {
-    const av = a[sortKey] ?? '';
-    const bv = b[sortKey] ?? '';
-    const cmp = String(av).localeCompare(String(bv));
-    return sortDir === 'asc' ? cmp : -cmp;
-  });
+  const sorted = [...leads]
+    .filter((l) => destFilter === 'ALL' || l.upload_destination === destFilter)
+    .sort((a, b) => {
+      const av = a[sortKey] ?? '';
+      const bv = b[sortKey] ?? '';
+      const cmp = String(av).localeCompare(String(bv));
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -90,6 +94,13 @@ export default function AdminLeadsClient() {
     };
   };
 
+  const getDestBadge = (dest: string | null) => {
+    if (dest === 'SRS')     return { emoji: '🟨', label: 'SRS',     bg: 'rgba(201,169,110,0.15)', color: 'var(--gold-dark)',  border: 'rgba(201,169,110,0.4)' };
+    if (dest === 'RADHIKA') return { emoji: '🟪', label: 'RADHIKA', bg: 'rgba(139,92,246,0.12)',  color: '#7c3aed',            border: 'rgba(139,92,246,0.35)' };
+    if (dest === 'BOTH')    return { emoji: '🟩', label: 'BOTH',    bg: 'rgba(37,211,102,0.12)',  color: '#15803d',            border: 'rgba(37,211,102,0.35)' };
+    return null;
+  };
+
   return (
     <div className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
       {/* Header */}
@@ -112,21 +123,48 @@ export default function AdminLeadsClient() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Total Leads', value: leads.length },
           { label: 'With Files', value: leads.filter((l) => l.uploaded_files?.length).length },
-          { label: 'Wholesalers', value: leads.filter((l) => l.business_type === 'Wholesaler').length },
-          { label: 'Retailers', value: leads.filter((l) => l.business_type === 'Retailer').length },
+          { label: 'SRS', value: leads.filter((l) => l.upload_destination === 'SRS').length },
+          { label: 'Radhika', value: leads.filter((l) => l.upload_destination === 'RADHIKA').length },
         ].map(({ label, value }) => (
-          <div
-            key={label}
-            className="glass-card p-4 text-center"
-          >
+          <div key={label} className="glass-card p-4 text-center">
             <p className="text-2xl font-bold text-gold-gradient">{value}</p>
             <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Destination Filter */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        {(['ALL', 'SRS', 'RADHIKA', 'BOTH'] as DestFilter[]).map((f) => {
+          const labels: Record<DestFilter, string> = { ALL: 'All', SRS: '🟨 SRS', RADHIKA: '🟪 Radhika', BOTH: '🟩 Both' };
+          const active = destFilter === f;
+          return (
+            <button
+              key={f}
+              onClick={() => setDestFilter(f)}
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 50,
+                border: '1px solid var(--gold)',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s ease',
+                background: active ? 'var(--gold)' : 'transparent',
+                color: active ? '#1a1a1a' : 'var(--gold-dark)',
+                boxShadow: active ? '0 4px 10px rgba(201,162,39,0.25)' : 'none',
+              }}
+            >
+              {labels[f]}
+            </button>
+          );
+        })}
       </div>
 
       {/* Search + Refresh */}
@@ -197,7 +235,7 @@ export default function AdminLeadsClient() {
                   <th onClick={() => handleSort('shop_name')}>
                     <span className="flex items-center gap-1">Shop <SortIcon colKey="shop_name" /></span>
                   </th>
-                  <th>Type</th>
+                  <th>Dest.</th>
                   <th>Files</th>
                   <th onClick={() => handleSort('created_at')}>
                     <span className="flex items-center gap-1">Date <SortIcon colKey="created_at" /></span>
@@ -234,13 +272,16 @@ export default function AdminLeadsClient() {
                       </div>
                     </td>
                     <td>
-                      {lead.business_type ? (
-                        <span style={getBadgeStyle(lead.business_type)}>
-                          {lead.business_type}
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>
-                      )}
+                      {(() => {
+                        const b = getDestBadge(lead.upload_destination);
+                        return b ? (
+                          <span style={{ background: b.bg, color: b.color, border: `1px solid ${b.border}`, padding: '3px 10px', borderRadius: 100, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            {b.emoji} {b.label}
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>
+                        );
+                      })()}
                     </td>
                     <td>
                       {lead.uploaded_files?.length ? (

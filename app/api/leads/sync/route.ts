@@ -24,6 +24,7 @@ export async function POST(request: Request) {
         remarks:        null,
         gst_number:     data.gst_number || null,
         uploaded_files: data.uploaded_files || null,
+        upload_destination: data.upload_destination || null,
       });
     } catch (dbError: any) {
       console.error('Supabase DB insert failed inside API:', dbError);
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
             'Front Image URL',
             'Back Image URL',
             'Upload Timestamp',
+            'Upload Destination',
             'Lead Source',
             'Lead Status'
           ]);
@@ -91,6 +93,12 @@ export async function POST(request: Request) {
           if (back) backUrl = back.url;
         }
 
+        const destLabel: Record<string, string> = {
+          SRS: 'Shree Radha Studio',
+          RADHIKA: 'Radhika Collection',
+          BOTH: 'Both',
+        };
+
         const hasTimestamp2 = sheet.headerValues.includes('Timestamp2');
         const rowData = {
           [hasTimestamp2 ? 'Timestamp2' : 'Timestamp']: data.timestamp || new Date().toLocaleString(),
@@ -103,6 +111,7 @@ export async function POST(request: Request) {
           'Front Image URL': frontUrl,
           'Back Image URL': backUrl,
           'Upload Timestamp': data.timestamp || new Date().toLocaleString(),
+          'Upload Destination': destLabel[data.upload_destination] || data.upload_destination || '',
           'Lead Source': data.lead_source || 'Website Registration',
           'Lead Status': data.lead_status || 'New Lead'
         };
